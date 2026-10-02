@@ -61,20 +61,18 @@ function Hero() {
   const { copy } = useSiteContent();
   return (
     <section className="bg-ink">
-      <div className="relative">
-        <img
-          src={copy.heroImage}
-          alt={copy.heroImageAlt}
-          width={2048}
-          height={1536}
-          fetchPriority="high"
-          className="block h-auto max-h-[82vh] w-full object-contain object-center"
-        />
-        <p className="absolute top-4 right-5 text-xs font-medium uppercase tracking-[0.22em] text-cream md:right-8">
-          {copy.heroBadge}
-        </p>
-      </div>
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-5 py-10 md:px-8 md:py-14">
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-6 px-5 py-8 md:px-8 lg:grid-cols-2 lg:gap-10 lg:py-12">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-cream/70">{copy.heroBadge}</p>
+          <img
+            src={copy.heroImage}
+            alt={copy.heroImageAlt}
+            width={2048}
+            height={1536}
+            fetchPriority="high"
+            className="mt-3 block h-auto max-h-56 w-full object-contain object-left sm:max-h-72 lg:max-h-[22rem]"
+          />
+        </div>
         <div className="max-w-xl border border-line bg-cream p-6 md:p-10">
           <p className="kicker enter">{copy.heroKicker}</p>
           <p className="enter mt-2 text-sm font-medium text-oak">{copy.area}</p>
