@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { services as serviceIcons, whatsappHref } from "@/lib/site";
 import { telHref, waNumber } from "@/lib/content";
 import { useSiteContent } from "@/lib/use-content";
-import { listGallery } from "@/lib/gallery.functions";
-import type { GalleryProject } from "@/lib/gallery";
 import { Header } from "@/components/header";
 import { Contact } from "@/components/contact";
 import { FacebookIcon, WhatsAppIcon } from "@/components/icons";
@@ -40,7 +38,6 @@ export function HomePage() {
         <Hero />
         <About />
         <Services />
-        <GalleryTeaser />
         <Testimonials />
         <Faq />
         <Contact />
@@ -296,64 +293,6 @@ function Faq() {
       </div>
     </section>
   );
-}
-
-function GalleryTeaser() {
-  const { copy } = useSiteContent();
-  const projects = useStateProjects();
-  const shown = projects ?? [];
-
-  return (
-    <section className="bg-paper py-20 md:py-28">
-      <div className="mx-auto w-full max-w-6xl px-5 md:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-2xl">
-            <p className="kicker">{copy.galleryKicker}</p>
-            <h2 className="mt-3 font-display text-4xl leading-tight text-ink md:text-5xl">{copy.galleryTitle}</h2>
-            <p className="mt-4 max-w-xl text-muted">{copy.galleryText}</p>
-          </div>
-          <a href="/trabalhos" className="tap btn btn-ink">
-            {copy.galleryButton}
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </a>
-        </div>
-      </div>
-      {shown.length > 0 ? (
-        <div className="mx-auto mt-10 grid w-full max-w-6xl grid-cols-1 gap-x-5 gap-y-8 px-5 sm:grid-cols-2 lg:grid-cols-3 md:px-8">
-          {shown.map((project) => {
-            const cover = project.photos[0];
-            if (!cover) return null;
-            return (
-              <a key={project.id} href={`/trabalhos#trabalho-${project.id}`} className="group block min-w-0">
-                <span className="block overflow-hidden rounded-card bg-ink">
-                  <img
-                    src={cover.src}
-                    alt={cover.alt}
-                    className="aspect-[4/3] w-full object-cover transition duration-700 ease-out group-hover:scale-105"
-                  />
-                </span>
-                <span className="mt-3 block font-display text-2xl leading-tight text-ink">{project.title}</span>
-                <span className="mt-1 block text-sm text-muted">
-                  {project.tag ? `${project.tag} · ` : ""}
-                  {project.photos.length} fotos
-                </span>
-              </a>
-            );
-          })}
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-function useStateProjects() {
-  const [projects, setProjects] = useState<GalleryProject[] | null>(null);
-  useEffect(() => {
-    listGallery()
-      .then(setProjects)
-      .catch(() => setProjects([]));
-  }, []);
-  return projects;
 }
 
 function Footer() {
