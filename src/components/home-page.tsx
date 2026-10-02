@@ -319,24 +319,20 @@ function GalleryTeaser() {
         </div>
       </div>
       {shown.length > 0 ? (
-        <div className="film mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 md:px-8">
+        <div className="mx-auto mt-10 grid w-full max-w-6xl grid-cols-1 gap-x-5 gap-y-8 px-5 sm:grid-cols-2 lg:grid-cols-3 md:px-8">
           {shown.map((project) => {
             const cover = project.photos[0];
             if (!cover) return null;
             return (
-              <a
-                key={project.id}
-                href={`/trabalhos#trabalho-${project.id}`}
-                className="group w-[78%] shrink-0 snap-start sm:w-[46%] lg:w-[31%]"
-              >
+              <a key={project.id} href={`/trabalhos#trabalho-${project.id}`} className="group block min-w-0">
                 <span className="block overflow-hidden rounded-card bg-ink">
                   <img
                     src={cover.src}
                     alt={cover.alt}
-                    className="aspect-[3/4] w-full object-cover transition duration-700 ease-out group-hover:scale-105"
+                    className="aspect-[4/3] w-full object-cover transition duration-700 ease-out group-hover:scale-105"
                   />
                 </span>
-                <span className="mt-3 block font-display text-2xl text-ink">{project.title}</span>
+                <span className="mt-3 block font-display text-2xl leading-tight text-ink">{project.title}</span>
                 <span className="mt-1 block text-sm text-muted">
                   {project.tag ? `${project.tag} · ` : ""}
                   {project.photos.length} fotos

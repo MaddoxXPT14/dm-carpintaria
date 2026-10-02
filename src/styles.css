@@ -199,14 +199,6 @@ dialog.lightbox::backdrop {
   animation: drift 16s ease-out both;
 }
 
-.film {
-  scrollbar-width: none;
-}
-
-.film::-webkit-scrollbar {
-  display: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
