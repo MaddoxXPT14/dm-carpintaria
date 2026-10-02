@@ -104,6 +104,15 @@ function passwordMatches(password: string, stored: string) {
   return timingSafeEqual(next, prev);
 }
 
+function orderBy<T extends { id: number }>(items: T[], ids: number[]) {
+  const map = new Map(items.map((item) => [item.id, item]));
+  const next = ids.map((id) => map.get(id)).filter((item): item is T => Boolean(item));
+  for (const item of items) {
+    if (!ids.includes(item.id)) next.push(item);
+  }
+  return next;
+}
+
 function nextIdFrom(projects: GalleryProject[]) {
   return (
     projects.reduce((max, project) => {
@@ -199,13 +208,20 @@ async function requirePassword(password: string) {
 
 export const getContent = createServerFn({ method: "GET" }).handler(async () => {
   const store = await loadStore();
-  return { copy: store.copy, projects: store.projects };
+  return { copy: store.copy, projects: store.projects.filter((project) => !project.hidden) };
 });
 
 export const listGallery = createServerFn({ method: "GET" }).handler(async () => {
   const store = await loadStore();
-  return store.projects;
+  return store.projects.filter((project) => !project.hidden);
 });
+
+export const listManagedGallery = createServerFn({ method: "POST" })
+  .validator(z.object({ password: z.string().min(1) }))
+  .handler(async ({ data }) => {
+    const store = await requirePassword(data.password);
+    return store.projects;
+  });
 
 export const checkGalleryPassword = createServerFn({ method: "POST" })
   .validator(z.object({ password: z.string().min(1) }))
@@ -245,6 +261,7 @@ export const updateGalleryProject = createServerFn({ method: "POST" })
       title: z.string().trim().min(2).max(120),
       tag: z.string().trim().max(40),
       body: z.string().trim().max(500),
+      captions: z.array(z.object({ id: z.number().int().positive(), alt: z.string().trim().max(180) })).max(40).optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -254,6 +271,42 @@ export const updateGalleryProject = createServerFn({ method: "POST" })
     project.title = data.title;
     project.tag = data.tag;
     project.body = data.body;
+    for (const caption of data.captions ?? []) {
+      const photo = project.photos.find((item) => item.id === caption.id);
+      if (photo) photo.alt = caption.alt || project.title;
+    }
+    const published = await publish(store);
+    return { published };
+  });
+
+export const arrangeGallery = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      password: z.string().min(1),
+      projectId: z.number().int().positive().optional(),
+      ids: z.array(z.number().int().positive()).min(1).max(80),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const store = await requirePassword(data.password);
+    if (data.projectId) {
+      const project = store.projects.find((item) => item.id === data.projectId);
+      if (!project) throw new Error("Esse trabalho já não está na galeria.");
+      project.photos = orderBy(project.photos, data.ids);
+    } else {
+      store.projects = orderBy(store.projects, data.ids);
+    }
+    const published = await publish(store);
+    return { published };
+  });
+
+export const setProjectHidden = createServerFn({ method: "POST" })
+  .validator(z.object({ password: z.string().min(1), id: z.number().int().positive(), hidden: z.boolean() }))
+  .handler(async ({ data }) => {
+    const store = await requirePassword(data.password);
+    const project = store.projects.find((item) => item.id === data.id);
+    if (!project) throw new Error("Esse trabalho já não está na galeria.");
+    project.hidden = data.hidden;
     const published = await publish(store);
     return { published };
   });
@@ -313,8 +366,8 @@ export const deleteGalleryProject = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const store = await requirePassword(data.password);
     store.projects = store.projects.filter((project) => project.id !== data.id);
-    await publish(store);
-    return { ok: true };
+    const published = await publish(store);
+    return { ok: true, published };
   });
 
 export const deleteGalleryPhoto = createServerFn({ method: "POST" })
@@ -325,6 +378,6 @@ export const deleteGalleryPhoto = createServerFn({ method: "POST" })
       ...project,
       photos: project.photos.filter((photo) => photo.id !== data.id),
     }));
-    await publish(store);
-    return { ok: true };
+    const published = await publish(store);
+    return { ok: true, published };
   });

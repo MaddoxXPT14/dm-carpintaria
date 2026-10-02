@@ -9,5 +9,6 @@ export type GalleryProject = {
   title: string;
   tag: string;
   body: string;
+  hidden?: boolean;
   photos: GalleryPhoto[];
 };

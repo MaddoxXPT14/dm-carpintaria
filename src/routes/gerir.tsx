@@ -14,6 +14,7 @@ import {
 } from "@/lib/gallery.functions";
 import type { SiteCopy } from "@/lib/content";
 import { clearContentCache } from "@/lib/use-content";
+import { WorksManager } from "@/components/works-manager";
 import type { GalleryProject } from "@/lib/gallery";
 
 const storageKey = "dm-gallery-key";
@@ -228,7 +229,7 @@ function Editor({
 
   return (
     <main className="bg-paper">
-      <section className="mx-auto w-full max-w-3xl px-5 py-12">
+      <section className={`mx-auto w-full px-5 py-12 ${panel === "trabalhos" ? "max-w-5xl" : "max-w-3xl"}`}>
         <h1 className="font-display text-4xl text-ink">Trabalhos</h1>
         <p className="mt-2 text-sm text-muted">Esta página não aparece no site.</p>
         <div className="mt-6 flex gap-2">
@@ -250,51 +251,7 @@ function Editor({
             onSaved={saved}
           />
         ) : null}
-        {panel === "trabalhos" ? (
-        <>
-        <form onSubmit={add} className="mt-8 grid gap-4 rounded-card border border-line bg-foam p-5">
-          <h2 className="font-display text-2xl">Novo trabalho</h2>
-          <input name="title" required minLength={2} placeholder="Nome" className="h-12 rounded-card border border-line bg-cream px-3" />
-          <input name="tag" placeholder="Sala, cozinha, quarto…" className="h-12 rounded-card border border-line bg-cream px-3" />
-          <textarea name="body" rows={3} placeholder="Texto" className="rounded-card border border-line bg-cream px-3 py-2" />
-          <input name="photos" type="file" accept="image/*" multiple required className="text-sm" />
-          {error ? <p className="text-sm text-oak-deep">{error}</p> : null}
-          <button type="submit" className="tap btn btn-ink" disabled={busy}>
-            {busy ? "A guardar…" : "Publicar trabalho"}
-          </button>
-        </form>
-        <div className="mt-8 grid gap-4">
-          {projects.map((project) => (
-            <article key={project.id} className="rounded-card border border-line bg-foam p-5">
-              <form onSubmit={(event) => saveProject(event, project.id)} className="grid gap-3">
-                <input name="title" required minLength={2} defaultValue={project.title} className="h-12 rounded-card border border-line bg-cream px-3" />
-                <input name="tag" defaultValue={project.tag} placeholder="Sala, cozinha…" className="h-12 rounded-card border border-line bg-cream px-3" />
-                <textarea name="body" rows={3} defaultValue={project.body} className="rounded-card border border-line bg-cream px-3 py-2" />
-                <div className="grid grid-cols-3 gap-2">
-                  {project.photos.map((photo) => (
-                    <div key={photo.id}>
-                      <img src={photo.src} alt={photo.alt} className="aspect-[4/3] w-full rounded-card object-cover" />
-                      <button type="button" className="tap mt-1 text-xs font-medium text-oak-deep" onClick={() => removePhoto(photo.id)}>
-                        Tirar foto
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <input name="photos" type="file" accept="image/*" multiple className="text-sm" />
-                <div className="flex flex-wrap gap-2">
-                  <button type="submit" className="tap btn btn-ink" disabled={busy}>
-                    Guardar trabalho
-                  </button>
-                  <button type="button" className="tap btn btn-line" onClick={() => removeProject(project.id)}>
-                    Retirar
-                  </button>
-                </div>
-              </form>
-            </article>
-          ))}
-        </div>
-        </>
-        ) : null}
+        {panel === "trabalhos" ? <WorksManager password={password} onSaved={saved} /> : null}
         {error && panel === "textos" ? <p className="mt-4 text-sm text-oak-deep">{error}</p> : null}
         <form onSubmit={changePassword} className="mt-10 grid gap-3 border-t border-line pt-8">
           <h2 className="font-display text-2xl">Mudar palavra-passe</h2>
