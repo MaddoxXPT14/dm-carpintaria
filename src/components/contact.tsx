@@ -89,9 +89,8 @@ export function Contact() {
     setCopied(true);
   }
 
-  const mapsHref = copy.address
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(copy.address)}`
-    : "https://www.google.com/maps/search/?api=1&query=DM%20Carpintaria";
+  const mapsQuery = mapsPlace(copy.address, copy.area);
+  const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}&hl=pt-PT`;
 
   return (
     <section id="contactos" className="scroll-mt-20 bg-cream py-20 md:py-28">
@@ -140,7 +139,7 @@ export function Contact() {
             {copy.address ? (
               <iframe
                 title="Mapa da DM Carpintaria"
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(copy.address)}&z=15&output=embed`}
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(mapsQuery)}&hl=pt&gl=pt&z=15&output=embed`}
                 className="h-56 w-full border-0"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
@@ -366,6 +365,12 @@ function messengerHref(facebook: string) {
     return facebook;
   }
   return facebook;
+}
+
+function mapsPlace(address: string, area: string) {
+  const place = [address.trim(), area.trim()].filter(Boolean).join(", ");
+  if (!place) return "Distrito de Bragança, Portugal";
+  return /portugal/i.test(place) ? place : `${place}, Portugal`;
 }
 
 function Field({
