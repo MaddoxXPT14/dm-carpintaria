@@ -63,14 +63,13 @@ function Hero() {
     <section className="bg-ink">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-6 px-5 py-8 md:px-8 lg:grid-cols-2 lg:gap-10 lg:py-12">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.22em] text-cream/70">{copy.heroBadge}</p>
           <img
             src={copy.heroImage}
             alt={copy.heroImageAlt}
             width={2048}
             height={1536}
             fetchPriority="high"
-            className="mt-3 block h-auto max-h-56 w-full object-contain object-left sm:max-h-72 lg:max-h-[22rem]"
+            className="block h-auto max-h-56 w-full object-contain object-left sm:max-h-72 lg:max-h-[22rem]"
           />
         </div>
         <div className="max-w-xl border border-line bg-cream p-6 md:p-10">
