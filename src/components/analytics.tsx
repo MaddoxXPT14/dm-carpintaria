@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { site } from "@/lib/site";
 
 declare global {
@@ -24,7 +25,7 @@ export function Analytics() {
     script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
     document.head.appendChild(script);
   }, []);
-  return null;
+  return <VercelAnalytics />;
 }
 
 export function trackLead() {
