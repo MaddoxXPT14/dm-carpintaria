@@ -74,6 +74,7 @@ const copySchema = z.object({
   phone: z.string().trim().min(6).max(40),
   email: z.string().trim().email().max(120),
   address: z.string().trim().max(180),
+  area: z.string().trim().max(80),
   facebook: z.string().trim().max(240),
   instagram: z.string().trim().max(240),
 });
@@ -190,6 +191,7 @@ function asCopy(value: unknown): SiteCopy {
   if (!merged.aboutCaption) merged.aboutCaption = defaultCopy.aboutCaption;
   if (!merged.visitTitle) merged.visitTitle = defaultCopy.visitTitle;
   if (!merged.visitText) merged.visitText = defaultCopy.visitText;
+  if (!merged.area) merged.area = defaultCopy.area;
   return merged;
 }
 

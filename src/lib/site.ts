@@ -11,7 +11,7 @@ import {
 export const site = {
   name: "DM Carpintaria",
   description:
-    "Carpintaria de interiores à medida. Painéis ripados em carvalho, mobiliário, cozinhas, roupeiros e portas. Orçamento claro e montagem no local.",
+    "Carpintaria de interiores à medida no distrito de Bragança. Painéis ripados, mobiliário, cozinhas, roupeiros e portas. Orçamento claro e montagem no local.",
   phoneDisplay: "+351 911 829 220",
   phoneTel: "+351911829220",
   whatsapp: "351911829220",
@@ -283,7 +283,7 @@ export const jsonLd = {
       telephone: site.phoneTel,
       email: site.email,
       url: site.facebook,
-      areaServed: { "@type": "Country", name: "Portugal" },
+      areaServed: { "@type": "AdministrativeArea", name: "Distrito de Bragança" },
       sameAs: [site.facebook],
       knowsLanguage: "pt-PT",
     },

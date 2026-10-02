@@ -62,6 +62,7 @@ export type SiteCopy = {
   phone: string;
   email: string;
   address: string;
+  area: string;
   facebook: string;
   instagram: string;
 };
@@ -198,6 +199,7 @@ export const defaultCopy: SiteCopy = {
   phone: "+351 911 829 220",
   email: "davidmarcal23@hotmail.com",
   address: "",
+  area: "Distrito de Bragança",
   facebook: "https://www.facebook.com/profile.php?id=61593776961711",
   instagram: "",
 };

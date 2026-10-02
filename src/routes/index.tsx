@@ -5,7 +5,7 @@ import { site } from "@/lib/site";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "DM Carpintaria — Madeira à medida" },
+      { title: "DM Carpintaria — Distrito de Bragança" },
       { name: "description", content: site.description },
       { name: "robots", content: "index, follow" },
       { name: "author", content: site.name },

@@ -154,7 +154,7 @@ export function Contact() {
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 p-4">
               <p className="text-sm text-muted">
-                {copy.address || "Portugal · deslocação ao local"}
+                {copy.address || `${copy.area} · deslocação ao local`}
               </p>
               <a href={mapsHref} target="_blank" rel="noreferrer" className="text-sm font-medium text-oak-deep">
                 Abrir no Google Maps

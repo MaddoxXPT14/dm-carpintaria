@@ -524,6 +524,7 @@ function TextEditor({
             <Field label="Telefone" value={draft.phone} onChange={(value) => set("phone", value)} />
             <Field label="Email" value={draft.email} onChange={(value) => set("email", value)} />
             <Field label="Morada" value={draft.address} onChange={(value) => set("address", value)} />
+            <Field label="Zona de trabalho" value={draft.area} onChange={(value) => set("area", value)} />
             <Field label="Facebook" value={draft.facebook} onChange={(value) => set("facebook", value)} />
             <Field label="Instagram" value={draft.instagram} onChange={(value) => set("instagram", value)} />
             <Field label="Texto do rodapé" value={draft.footerText} onChange={(value) => set("footerText", value)} area />

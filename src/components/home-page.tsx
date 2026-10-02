@@ -18,7 +18,7 @@ export function HomePage() {
         description: copy.heroText,
         telephone: telHref(copy.phone),
         email: copy.email,
-        areaServed: "Portugal",
+        areaServed: copy.area,
       },
       {
         "@type": "FAQPage",
@@ -78,6 +78,7 @@ function Hero() {
       <div className="relative z-10 mx-auto -mt-20 w-full max-w-6xl px-5 md:-mt-28 md:px-8">
         <div className="max-w-xl border border-line bg-cream/95 p-6 shadow-[0_24px_50px_-36px_rgb(28_22_18)] backdrop-blur-md md:p-10">
           <p className="kicker enter">{copy.heroKicker}</p>
+          <p className="enter mt-2 text-sm font-medium text-oak">{copy.area}</p>
           <h1 className="enter d1 mt-4 font-display text-5xl leading-[1.05] text-ink md:text-6xl">{copy.heroTitle}</h1>
           <p className="enter d2 mt-5 text-lg text-muted">{copy.heroText}</p>
           <div className="enter d3 mt-8 flex flex-wrap gap-3">
@@ -315,6 +316,7 @@ function Footer() {
             <img src="/logo.jpg" alt="" className="h-12 w-auto" />
             <span className="font-display text-3xl">DM Carpintaria</span>
           </a>
+          <p className="mt-2 text-sm text-muted">{copy.area}</p>
           <p className="mt-2 max-w-sm text-sm text-muted">
             {copy.footerText} {copy.phone} · {copy.email}
           </p>
