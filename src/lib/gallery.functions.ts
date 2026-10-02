@@ -1,7 +1,7 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getSql } from "@/lib/db";
 import { works } from "@/lib/site";
 import type { GalleryProject } from "@/lib/gallery";
 
@@ -12,6 +12,17 @@ const imageSchema = z.object({
     .max(2_000_000)
     .refine((value) => value.startsWith("data:image/jpeg;base64,"), "A foto tem de ser JPEG."),
 });
+
+const initialPasswordHash =
+  "e2093336b8ea9b4f5aac1bc4e9b23148:b9fbf143e615802e9b70fc199620f37832a0336c654b7aefdced47820bc1c381";
+
+const storePath = "/tmp/dm-gallery.json";
+
+type Store = {
+  nextId: number;
+  passwordHash: string;
+  projects: GalleryProject[];
+};
 
 function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -28,76 +39,59 @@ function passwordMatches(password: string, stored: string) {
   return timingSafeEqual(next, prev);
 }
 
+function seed(): Store {
+  let nextId = 1;
+  const projects = works.map((work) => {
+    const id = nextId;
+    nextId += 1;
+    return {
+      id,
+      title: work.title,
+      tag: work.tag,
+      body: work.text,
+      photos: work.images.map((image) => {
+        const photoId = nextId;
+        nextId += 1;
+        return { id: photoId, alt: image.alt, src: image.src };
+      }),
+    };
+  });
+  return { nextId, passwordHash: initialPasswordHash, projects };
+}
+
+let memory: Store | null = null;
+
+async function loadStore() {
+  if (memory) return memory;
+  try {
+    memory = JSON.parse(await readFile(storePath, "utf8")) as Store;
+    if (!memory.projects || !memory.passwordHash) memory = seed();
+  } catch {
+    memory = seed();
+  }
+  return memory;
+}
+
+async function saveStore(next: Store) {
+  memory = next;
+  try {
+    await mkdir("/tmp", { recursive: true });
+    await writeFile(storePath, JSON.stringify(next));
+  } catch {
+    // The preview keeps the copy in memory when the disk is read-only.
+  }
+}
+
 async function requirePassword(password: string) {
-  const sql = await getSql();
-  const rows = await sql<{ password_hash: string }>`select password_hash from gallery_lock where id = 1`;
-  const stored = rows[0]?.password_hash;
-  if (!stored || !passwordMatches(password, stored)) {
+  const store = await loadStore();
+  if (!passwordMatches(password, store.passwordHash)) {
     throw new Error("Palavra-passe incorreta.");
   }
 }
 
-async function ensureSeeded() {
-  const sql = await getSql();
-  const meta = await sql<{ seeded: boolean }>`select seeded from gallery_meta where id = 1`;
-  if (meta[0]?.seeded) return;
-  const existing = await sql<{ n: number }>`select count(*)::int as n from gallery_projects`;
-  if ((existing[0]?.n ?? 0) === 0) {
-    for (let index = 0; index < works.length; index += 1) {
-      const work = works[index];
-      const rows = await sql<{ id: number }>`
-        insert into gallery_projects (title, tag, body, position)
-        values (${work.title}, ${work.tag}, ${work.text}, ${index})
-        returning id
-      `;
-      const projectId = rows[0]?.id;
-      if (!projectId) continue;
-      for (let photo = 0; photo < work.images.length; photo += 1) {
-        const image = work.images[photo];
-        await sql`
-          insert into gallery_photos (project_id, alt, src, position)
-          values (${projectId}, ${image.alt}, ${image.src}, ${photo})
-        `;
-      }
-    }
-  }
-  await sql`
-    insert into gallery_meta (id, seeded) values (1, true)
-    on conflict (id) do update set seeded = true
-  `;
-}
-
-function mapProjects(
-  projects: { id: number; title: string; tag: string; body: string }[],
-  photos: { id: number; project_id: number; alt: string; src: string; has_data: boolean }[],
-): GalleryProject[] {
-  return projects.map((project) => ({
-    id: project.id,
-    title: project.title,
-    tag: project.tag,
-    body: project.body,
-    photos: photos
-      .filter((photo) => photo.project_id === project.id)
-      .map((photo) => ({
-        id: photo.id,
-        alt: photo.alt || project.title,
-        src: photo.has_data ? `/api/gallery/${photo.id}` : photo.src,
-      })),
-  }));
-}
-
 export const listGallery = createServerFn({ method: "GET" }).handler(async () => {
-  await ensureSeeded();
-  const sql = await getSql();
-  const projects = await sql<{ id: number; title: string; tag: string; body: string }>`
-    select id, title, tag, body from gallery_projects order by position, id
-  `;
-  const photos = await sql<{ id: number; project_id: number; alt: string; src: string; has_data: boolean }>`
-    select id, project_id, alt, src, (data is not null) as has_data
-    from gallery_photos
-    order by position, id
-  `;
-  return mapProjects(projects, photos);
+  const store = await loadStore();
+  return store.projects;
 });
 
 export const checkGalleryPassword = createServerFn({ method: "POST" })
@@ -115,9 +109,10 @@ export const changeGalleryPassword = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    const store = await loadStore();
     await requirePassword(data.password);
-    const sql = await getSql();
-    await sql`update gallery_lock set password_hash = ${hashPassword(data.next)} where id = 1`;
+    store.passwordHash = hashPassword(data.next);
+    await saveStore(store);
     return { ok: true };
   });
 
@@ -132,41 +127,45 @@ export const addGalleryProject = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    const store = await loadStore();
     await requirePassword(data.password);
-    const sql = await getSql();
-    const positionRows = await sql<{ n: number }>`select coalesce(max(position), -1)::int as n from gallery_projects`;
-    const position = (positionRows[0]?.n ?? -1) + 1;
-    const rows = await sql<{ id: number }>`
-      insert into gallery_projects (title, tag, body, position)
-      values (${data.title}, ${data.tag}, ${data.body}, ${position})
-      returning id
-    `;
-    const projectId = rows[0]?.id;
-    if (!projectId) throw new Error("Não foi possível guardar o trabalho.");
-    for (let index = 0; index < data.images.length; index += 1) {
-      const image = data.images[index];
-      await sql`
-        insert into gallery_photos (project_id, alt, src, data, position)
-        values (${projectId}, ${image.alt || data.title}, ${""}, ${image.data}, ${index})
-      `;
-    }
-    return { id: projectId };
+    const id = store.nextId;
+    store.nextId += 1;
+    const photos = data.images.map((image) => {
+      const photoId = store.nextId;
+      store.nextId += 1;
+      return { id: photoId, alt: image.alt || data.title, src: image.data };
+    });
+    store.projects.unshift({
+      id,
+      title: data.title,
+      tag: data.tag,
+      body: data.body,
+      photos,
+    });
+    await saveStore(store);
+    return { id };
   });
 
 export const deleteGalleryProject = createServerFn({ method: "POST" })
   .validator(z.object({ password: z.string().min(1), id: z.number().int().positive() }))
   .handler(async ({ data }) => {
+    const store = await loadStore();
     await requirePassword(data.password);
-    const sql = await getSql();
-    await sql`delete from gallery_projects where id = ${data.id}`;
+    store.projects = store.projects.filter((project) => project.id !== data.id);
+    await saveStore(store);
     return { ok: true };
   });
 
 export const deleteGalleryPhoto = createServerFn({ method: "POST" })
   .validator(z.object({ password: z.string().min(1), id: z.number().int().positive() }))
   .handler(async ({ data }) => {
+    const store = await loadStore();
     await requirePassword(data.password);
-    const sql = await getSql();
-    await sql`delete from gallery_photos where id = ${data.id}`;
+    store.projects = store.projects.map((project) => ({
+      ...project,
+      photos: project.photos.filter((photo) => photo.id !== data.id),
+    }));
+    await saveStore(store);
     return { ok: true };
   });
