@@ -60,7 +60,7 @@ export function HomePage() {
 function Hero() {
   const { copy } = useSiteContent();
   return (
-    <section className="bg-ink">
+    <section className="bg-white">
       <div className="mx-auto grid w-full max-w-6xl items-center gap-6 px-5 py-8 md:px-8 lg:grid-cols-2 lg:gap-10 lg:py-12">
         <div>
           <img
@@ -72,7 +72,7 @@ function Hero() {
             className="block h-auto max-h-56 w-full object-contain object-left sm:max-h-72 lg:max-h-[22rem]"
           />
         </div>
-        <div className="max-w-xl border border-line bg-cream p-6 md:p-10">
+        <div className="max-w-xl border border-line bg-white p-6 md:p-10">
           <p className="kicker enter">{copy.heroKicker}</p>
           <p className="enter mt-2 text-sm font-medium text-oak">{copy.area}</p>
           <h1 className="enter d1 mt-4 font-display text-5xl leading-[1.05] text-ink md:text-6xl">{copy.heroTitle}</h1>
