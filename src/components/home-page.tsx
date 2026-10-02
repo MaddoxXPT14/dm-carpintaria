@@ -60,23 +60,22 @@ export function HomePage() {
 function Hero() {
   const { copy } = useSiteContent();
   return (
-    <section className="relative">
-      <div className="relative h-[68vw] min-h-[420px] overflow-hidden bg-ink lg:h-[78vh] lg:max-h-[860px]">
+    <section className="bg-ink">
+      <div className="relative">
         <img
           src={copy.heroImage}
           alt={copy.heroImageAlt}
           width={2048}
           height={1536}
           fetchPriority="high"
-          className="drift absolute inset-0 size-full object-cover"
+          className="block h-auto max-h-[82vh] w-full object-contain object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-ink/20" />
-        <p className="absolute bottom-28 left-5 text-xs font-medium uppercase tracking-[0.22em] text-cream md:bottom-36 md:left-8">
+        <p className="absolute top-4 right-5 text-xs font-medium uppercase tracking-[0.22em] text-cream md:right-8">
           {copy.heroBadge}
         </p>
       </div>
-      <div className="relative z-10 mx-auto -mt-20 w-full max-w-6xl px-5 md:-mt-28 md:px-8">
-        <div className="max-w-xl border border-line bg-cream/95 p-6 shadow-[0_24px_50px_-36px_rgb(28_22_18)] backdrop-blur-md md:p-10">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-5 py-10 md:px-8 md:py-14">
+        <div className="max-w-xl border border-line bg-cream p-6 md:p-10">
           <p className="kicker enter">{copy.heroKicker}</p>
           <p className="enter mt-2 text-sm font-medium text-oak">{copy.area}</p>
           <h1 className="enter d1 mt-4 font-display text-5xl leading-[1.05] text-ink md:text-6xl">{copy.heroTitle}</h1>
