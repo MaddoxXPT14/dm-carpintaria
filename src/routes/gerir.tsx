@@ -295,7 +295,20 @@ function TextEditor({
     onBusy(true);
     onError("");
     try {
-      const result = await updateSiteCopy({ data: { password, copy: draft } });
+      const result = await updateSiteCopy({
+        data: {
+          password,
+          copy: {
+            ...draft,
+            heroNotes: draft.heroNotes.map((line) => line.trim()).filter(Boolean),
+            promises: draft.promises.map((line) => line.trim()).filter(Boolean),
+            services: draft.services.map((service) => ({
+              ...service,
+              benefits: service.benefits.map((line) => line.trim()).filter(Boolean),
+            })),
+          },
+        },
+      });
       onSaved(result.published);
     } catch (caught) {
       onError(caught instanceof Error ? caught.message : "Não foi possível guardar.");
@@ -304,78 +317,213 @@ function TextEditor({
     }
   }
 
+  const [menu, setMenu] = useState<(typeof menus)[number]["id"]>("inicio");
+  const current = menus.find((item) => item.id === menu) ?? menus[0];
+
   return (
-    <form onSubmit={save} className="mt-8 grid gap-4">
-      <Field label="Título principal" value={draft.heroTitle} onChange={(value) => set("heroTitle", value)} />
-      <Field label="Texto principal" value={draft.heroText} onChange={(value) => set("heroText", value)} area />
-      <Field label="Sobre — título" value={draft.aboutTitle} onChange={(value) => set("aboutTitle", value)} />
-      <Field label="Sobre — texto" value={draft.aboutP1} onChange={(value) => set("aboutP1", value)} area />
-      <Field label="Sobre — segundo texto" value={draft.aboutP2} onChange={(value) => set("aboutP2", value)} area />
-      <Field label="Missão" value={draft.mission} onChange={(value) => set("mission", value)} area />
-      <Field label="Visão" value={draft.vision} onChange={(value) => set("vision", value)} area />
-      <Field label="Valores" value={draft.values} onChange={(value) => set("values", value)} area />
-      {draft.services.map((service, index) => (
-        <fieldset key={service.title} className="grid gap-2 rounded-card border border-line bg-foam p-4">
-          <legend className="px-1 text-sm text-muted">Serviço {index + 1}</legend>
-          <Field
-            label="Nome"
-            value={service.title}
-            onChange={(value) =>
-              set(
-                "services",
-                draft.services.map((item, itemIndex) => (itemIndex === index ? { ...item, title: value } : item)),
-              )
-            }
-          />
-          <Field
-            label="Texto"
-            value={service.summary}
-            area
-            onChange={(value) =>
-              set(
-                "services",
-                draft.services.map((item, itemIndex) => (itemIndex === index ? { ...item, summary: value } : item)),
-              )
-            }
-          />
-        </fieldset>
-      ))}
-      {draft.faqs.map((item, index) => (
-        <fieldset key={`${item.q}-${index}`} className="grid gap-2 rounded-card border border-line bg-foam p-4">
-          <legend className="px-1 text-sm text-muted">Pergunta {index + 1}</legend>
-          <Field
-            label="Pergunta"
-            value={item.q}
-            onChange={(value) =>
-              set(
-                "faqs",
-                draft.faqs.map((faq, faqIndex) => (faqIndex === index ? { ...faq, q: value } : faq)),
-              )
-            }
-          />
-          <Field
-            label="Resposta"
-            value={item.a}
-            area
-            onChange={(value) =>
-              set(
-                "faqs",
-                draft.faqs.map((faq, faqIndex) => (faqIndex === index ? { ...faq, a: value } : faq)),
-              )
-            }
-          />
-        </fieldset>
-      ))}
-      <Field label="Citação" value={draft.quote} onChange={(value) => set("quote", value)} />
-      <Field label="Autor da citação" value={draft.quoteBy} onChange={(value) => set("quoteBy", value)} area />
-      <Field label="Telefone" value={draft.phone} onChange={(value) => set("phone", value)} />
-      <Field label="Email" value={draft.email} onChange={(value) => set("email", value)} />
-      <Field label="Morada" value={draft.address} onChange={(value) => set("address", value)} />
-      <Field label="Instagram" value={draft.instagram} onChange={(value) => set("instagram", value)} />
-      <button type="submit" className="tap btn btn-ink" disabled={busy}>
-        {busy ? "A guardar…" : "Guardar textos"}
+    <form onSubmit={save} className="mt-8 grid gap-6">
+      <div className="flex flex-wrap gap-2">
+        {menus.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`tap btn ${menu === item.id ? "btn-ink" : "btn-line"}`}
+            onClick={() => setMenu(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <section className="grid gap-4">
+        <div>
+          <h2 className="font-display text-3xl">{current.label}</h2>
+          <p className="mt-1 text-sm text-muted">{current.hint}</p>
+        </div>
+        {menu === "inicio" ? (
+          <>
+            <Field label="Pequeno texto por cima" value={draft.heroKicker} onChange={(value) => set("heroKicker", value)} />
+            <Field label="Título" value={draft.heroTitle} onChange={(value) => set("heroTitle", value)} />
+            <Field label="Texto" value={draft.heroText} onChange={(value) => set("heroText", value)} area />
+            <Field label="Botão principal" value={draft.heroPrimary} onChange={(value) => set("heroPrimary", value)} />
+            <Field label="Botão secundário" value={draft.heroSecondary} onChange={(value) => set("heroSecondary", value)} />
+            <Lines label="Notas, uma por linha" value={draft.heroNotes} onChange={(value) => set("heroNotes", value)} />
+            <Field label="Legenda da imagem" value={draft.heroBadge} onChange={(value) => set("heroBadge", value)} />
+          </>
+        ) : null}
+        {menu === "sobre" ? (
+          <>
+            <Field label="Pequeno texto por cima" value={draft.aboutKicker} onChange={(value) => set("aboutKicker", value)} />
+            <Field label="Título" value={draft.aboutTitle} onChange={(value) => set("aboutTitle", value)} />
+            <Field label="Primeiro texto" value={draft.aboutP1} onChange={(value) => set("aboutP1", value)} area />
+            <Field label="Segundo texto" value={draft.aboutP2} onChange={(value) => set("aboutP2", value)} area />
+            <Field label="Missão" value={draft.mission} onChange={(value) => set("mission", value)} area />
+            <Field label="Visão" value={draft.vision} onChange={(value) => set("vision", value)} area />
+            <Field label="Valores" value={draft.values} onChange={(value) => set("values", value)} area />
+            {draft.steps.map((step, index) => (
+              <fieldset key={step.n} className="grid gap-2 rounded-card border border-line bg-foam p-4">
+                <legend className="px-1 text-sm text-muted">Passo {index + 1}</legend>
+                <Field
+                  label="Título"
+                  value={step.title}
+                  onChange={(value) =>
+                    set(
+                      "steps",
+                      draft.steps.map((item, itemIndex) => (itemIndex === index ? { ...item, title: value } : item)),
+                    )
+                  }
+                />
+                <Field
+                  label="Texto"
+                  value={step.text}
+                  area
+                  onChange={(value) =>
+                    set(
+                      "steps",
+                      draft.steps.map((item, itemIndex) => (itemIndex === index ? { ...item, text: value } : item)),
+                    )
+                  }
+                />
+              </fieldset>
+            ))}
+          </>
+        ) : null}
+        {menu === "servicos" ? (
+          <>
+            <Field label="Pequeno texto por cima" value={draft.servicesKicker} onChange={(value) => set("servicesKicker", value)} />
+            <Field label="Título" value={draft.servicesTitle} onChange={(value) => set("servicesTitle", value)} />
+            <Field label="Introdução" value={draft.servicesIntro} onChange={(value) => set("servicesIntro", value)} area />
+            {draft.services.map((service, index) => (
+              <fieldset key={index} className="grid gap-2 rounded-card border border-line bg-foam p-4">
+                <legend className="px-1 text-sm text-muted">Serviço {index + 1}</legend>
+                <Field
+                  label="Nome"
+                  value={service.title}
+                  onChange={(value) =>
+                    set(
+                      "services",
+                      draft.services.map((item, itemIndex) => (itemIndex === index ? { ...item, title: value } : item)),
+                    )
+                  }
+                />
+                <Field
+                  label="Texto"
+                  value={service.summary}
+                  area
+                  onChange={(value) =>
+                    set(
+                      "services",
+                      draft.services.map((item, itemIndex) => (itemIndex === index ? { ...item, summary: value } : item)),
+                    )
+                  }
+                />
+                <Lines
+                  label="Benefícios, um por linha"
+                  value={service.benefits}
+                  onChange={(value) =>
+                    set(
+                      "services",
+                      draft.services.map((item, itemIndex) => (itemIndex === index ? { ...item, benefits: value } : item)),
+                    )
+                  }
+                />
+              </fieldset>
+            ))}
+          </>
+        ) : null}
+        {menu === "galeria" ? (
+          <>
+            <Field label="Pequeno texto por cima" value={draft.galleryKicker} onChange={(value) => set("galleryKicker", value)} />
+            <Field label="Título na página inicial" value={draft.galleryTitle} onChange={(value) => set("galleryTitle", value)} />
+            <Field label="Texto na página inicial" value={draft.galleryText} onChange={(value) => set("galleryText", value)} area />
+            <Field label="Botão para a galeria" value={draft.galleryButton} onChange={(value) => set("galleryButton", value)} />
+            <Field label="Título da página de trabalhos" value={draft.trabalhosTitle} onChange={(value) => set("trabalhosTitle", value)} />
+            <Field label="Texto da página de trabalhos" value={draft.trabalhosText} onChange={(value) => set("trabalhosText", value)} area />
+          </>
+        ) : null}
+        {menu === "testemunhos" ? (
+          <>
+            <Field label="Pequeno texto por cima" value={draft.testimonialsKicker} onChange={(value) => set("testimonialsKicker", value)} />
+            <Field label="Título" value={draft.testimonialsTitle} onChange={(value) => set("testimonialsTitle", value)} />
+            <Field label="Citação" value={draft.quote} onChange={(value) => set("quote", value)} area />
+            <Field label="Quem disse" value={draft.quoteBy} onChange={(value) => set("quoteBy", value)} area />
+            <Field label="Nota" value={draft.testimonialsNote} onChange={(value) => set("testimonialsNote", value)} area />
+            <Field label="Título dos compromissos" value={draft.promisesTitle} onChange={(value) => set("promisesTitle", value)} />
+            <Lines label="Compromissos, um por linha" value={draft.promises} onChange={(value) => set("promises", value)} />
+          </>
+        ) : null}
+        {menu === "perguntas" ? (
+          <>
+            <Field label="Pequeno texto por cima" value={draft.faqKicker} onChange={(value) => set("faqKicker", value)} />
+            <Field label="Título" value={draft.faqTitle} onChange={(value) => set("faqTitle", value)} />
+            <Field label="Introdução" value={draft.faqIntro} onChange={(value) => set("faqIntro", value)} area />
+            {draft.faqs.map((item, index) => (
+              <fieldset key={index} className="grid gap-2 rounded-card border border-line bg-foam p-4">
+                <legend className="px-1 text-sm text-muted">Pergunta {index + 1}</legend>
+                <Field
+                  label="Pergunta"
+                  value={item.q}
+                  onChange={(value) =>
+                    set(
+                      "faqs",
+                      draft.faqs.map((faq, faqIndex) => (faqIndex === index ? { ...faq, q: value } : faq)),
+                    )
+                  }
+                />
+                <Field
+                  label="Resposta"
+                  value={item.a}
+                  area
+                  onChange={(value) =>
+                    set(
+                      "faqs",
+                      draft.faqs.map((faq, faqIndex) => (faqIndex === index ? { ...faq, a: value } : faq)),
+                    )
+                  }
+                />
+              </fieldset>
+            ))}
+          </>
+        ) : null}
+        {menu === "contactos" ? (
+          <>
+            <Field label="Pequeno texto por cima" value={draft.contactKicker} onChange={(value) => set("contactKicker", value)} />
+            <Field label="Título" value={draft.contactTitle} onChange={(value) => set("contactTitle", value)} />
+            <Field label="Texto" value={draft.contactText} onChange={(value) => set("contactText", value)} area />
+            <Field label="Telefone" value={draft.phone} onChange={(value) => set("phone", value)} />
+            <Field label="Email" value={draft.email} onChange={(value) => set("email", value)} />
+            <Field label="Morada" value={draft.address} onChange={(value) => set("address", value)} />
+            <Field label="Facebook" value={draft.facebook} onChange={(value) => set("facebook", value)} />
+            <Field label="Instagram" value={draft.instagram} onChange={(value) => set("instagram", value)} />
+            <Field label="Texto do rodapé" value={draft.footerText} onChange={(value) => set("footerText", value)} area />
+          </>
+        ) : null}
+      </section>
+      <button type="submit" className="tap btn btn-ink w-fit" disabled={busy}>
+        {busy ? "A guardar…" : "Guardar este menu"}
       </button>
     </form>
+  );
+}
+
+const menus = [
+  { id: "inicio", label: "Início", hint: "O primeiro ecrã do site." },
+  { id: "sobre", label: "Sobre nós", hint: "História, missão e os passos do trabalho." },
+  { id: "servicos", label: "Serviços", hint: "Cada serviço e os benefícios." },
+  { id: "galeria", label: "Galeria", hint: "Os textos da galeria, não as fotos." },
+  { id: "testemunhos", label: "Testemunhos", hint: "A citação e os compromissos." },
+  { id: "perguntas", label: "Perguntas", hint: "As perguntas frequentes." },
+  { id: "contactos", label: "Contactos", hint: "Telefone, email, morada e redes." },
+] as const;
+
+function Lines({ label, value, onChange }: { label: string; value: string[]; onChange: (value: string[]) => void }) {
+  const text = value.join("\n");
+  return (
+    <Field
+      label={label}
+      value={text}
+      area
+      onChange={(next) => onChange(next.split("\n"))}
+    />
   );
 }
 
