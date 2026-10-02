@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Check, Star } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { services as serviceIcons, whatsappHref } from "@/lib/site";
 import { telHref, waNumber } from "@/lib/content";
 import { useSiteContent } from "@/lib/use-content";
@@ -62,45 +62,48 @@ export function HomePage() {
 function Hero() {
   const { copy } = useSiteContent();
   return (
-    <section className="grid lg:grid-cols-12">
-      <div className="order-2 flex flex-col justify-center px-5 py-14 md:px-8 lg:order-1 lg:col-span-5 lg:py-20 lg:pr-10">
-        <p className="kicker enter">{copy.heroKicker}</p>
-        <h1 className="enter d1 mt-4 font-display text-5xl leading-tight text-ink md:text-6xl">{copy.heroTitle}</h1>
-        <p className="enter d2 mt-5 max-w-md text-lg text-muted">{copy.heroText}</p>
-        <div className="enter d3 mt-8 flex flex-wrap gap-3">
-          <a href="#contactos" className="tap btn btn-ink">
-            {copy.heroPrimary}
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </a>
-          <a href="#contactos" className="tap btn btn-line">
-            {copy.heroSecondary}
-          </a>
-        </div>
-        <ul className="enter d4 mt-10 flex list-none flex-col gap-2 text-sm text-muted sm:flex-row sm:gap-5">
-          {copy.heroNotes.flatMap((note, index) =>
-            index === 0
-              ? [<li key={note}>{note}</li>]
-              : [
-                  <li key={`${note}-dot`} className="hidden sm:list-item">
-                    ·
-                  </li>,
-                  <li key={note}>{note}</li>,
-                ],
-          )}
-        </ul>
-      </div>
-      <div className="relative order-1 min-h-[58vw] lg:order-2 lg:col-span-7 lg:min-h-full">
+    <section className="relative">
+      <div className="relative h-[68vw] min-h-[420px] overflow-hidden bg-ink lg:h-[78vh] lg:max-h-[860px]">
         <img
           src="/gallery/fb/sala.jpg"
           alt="Sala concluída com painel ripado em carvalho e base de televisão, obra da DM Carpintaria"
           width={2048}
           height={1536}
           fetchPriority="high"
-          className="absolute inset-0 size-full object-cover"
+          className="drift absolute inset-0 size-full object-cover"
         />
-        <p className="absolute bottom-4 left-4 rounded-full bg-cream/95 px-3 py-2 text-xs font-medium uppercase tracking-widest text-ink">
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/10 to-ink/20" />
+        <p className="absolute bottom-28 left-5 text-xs font-medium uppercase tracking-[0.22em] text-cream md:bottom-36 md:left-8">
           {copy.heroBadge}
         </p>
+      </div>
+      <div className="relative z-10 mx-auto -mt-20 w-full max-w-6xl px-5 md:-mt-28 md:px-8">
+        <div className="max-w-xl border border-line bg-cream/95 p-6 shadow-[0_24px_50px_-36px_rgb(28_22_18)] backdrop-blur-md md:p-10">
+          <p className="kicker enter">{copy.heroKicker}</p>
+          <h1 className="enter d1 mt-4 font-display text-5xl leading-[1.05] text-ink md:text-6xl">{copy.heroTitle}</h1>
+          <p className="enter d2 mt-5 text-lg text-muted">{copy.heroText}</p>
+          <div className="enter d3 mt-8 flex flex-wrap gap-3">
+            <a href="#contactos" className="tap btn btn-ink">
+              {copy.heroPrimary}
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </a>
+            <a href="#contactos" className="tap btn btn-line">
+              {copy.heroSecondary}
+            </a>
+          </div>
+          <ul className="enter d4 mt-8 flex list-none flex-col gap-2 text-sm text-muted sm:flex-row sm:gap-5">
+            {copy.heroNotes.flatMap((note, index) =>
+              index === 0
+                ? [<li key={note}>{note}</li>]
+                : [
+                    <li key={`${note}-dot`} className="hidden sm:list-item">
+                      ·
+                    </li>,
+                    <li key={note}>{note}</li>,
+                  ],
+            )}
+          </ul>
+        </div>
       </div>
     </section>
   );
@@ -135,7 +138,7 @@ function About() {
       <div className="mx-auto mt-16 w-full max-w-6xl px-5 md:px-8">
         <ol className="grid gap-px overflow-hidden rounded-card border border-cream/15 bg-cream/15 sm:grid-cols-2 lg:grid-cols-4">
         {copy.steps.map((step) => (
-          <li key={step.n} className="bg-ink p-6">
+          <li key={step.n} className="bg-ink p-6 transition-colors duration-300 hover:bg-[#2a221c]">
             <p className="font-display text-2xl text-brass">{step.n}</p>
             <h3 className="mt-3 font-display text-2xl">{step.title}</h3>
             <p className="mt-2 text-sm text-cream/70">{step.text}</p>
@@ -156,16 +159,26 @@ function Value({ title, text }: { title: string; text: string }) {
   );
 }
 
+const servicePhotos = [
+  "/gallery/fb/ripas.jpg",
+  "/gallery/fb/conjunto.jpg",
+  "/gallery/fb/luz.jpg",
+  "/gallery/fb/lateral.jpg",
+  "/gallery/fb/angulo.jpg",
+  "/gallery/fb/sala.jpg",
+];
+
 function Services() {
   const { copy } = useSiteContent();
+  const [active, setActive] = useState(0);
   const items = copy.services.map((service, index) => ({
     ...service,
     icon: serviceIcons[index]?.icon ?? serviceIcons[0].icon,
+    photo: servicePhotos[index % servicePhotos.length],
   }));
-  const lead = items[0];
-  if (!lead) return null;
-  const rest = items.slice(1);
-  const LeadIcon = lead.icon;
+  const current = items[active] ?? items[0];
+  if (!current) return null;
+  const Icon = current.icon;
   return (
     <section id="servicos" className="scroll-mt-20 bg-cream py-20 md:py-28">
       <div className="mx-auto w-full max-w-6xl px-5 md:px-8">
@@ -174,48 +187,40 @@ function Services() {
           <h2 className="mt-3 font-display text-4xl leading-tight md:text-5xl">{copy.servicesTitle}</h2>
           <p className="mt-4 text-muted">{copy.servicesIntro}</p>
         </div>
-
-        <article className="mt-12 grid overflow-hidden rounded-card border border-line bg-foam md:grid-cols-2">
-          <img
-            src="/gallery/fb/ripas.jpg"
-            alt="Painel ripado em carvalho com televisão integrada, obra publicada"
-            className="h-full min-h-64 w-full object-cover"
-            loading="lazy"
-          />
-          <div className="flex flex-col justify-center p-6 md:p-10">
-            <LeadIcon className="size-6 text-oak" aria-hidden="true" />
-            <h3 className="mt-4 font-display text-3xl">{lead.title}</h3>
-            <p className="mt-3 text-muted">{lead.summary}</p>
-            <ul className="mt-5 space-y-2">
-              {lead.benefits.map((benefit) => (
-                <li key={benefit} className="flex items-start gap-2 text-sm">
-                  <Check className="mt-0.5 size-4 shrink-0 text-oak" aria-hidden="true" />
-                  {benefit}
-                </li>
-              ))}
-            </ul>
+        <div className="mt-10 grid items-start gap-6 lg:grid-cols-12">
+          <div className="grid gap-2 lg:col-span-4" role="tablist" aria-label="Serviços">
+            {items.map((service, index) => (
+              <button
+                key={service.title}
+                type="button"
+                role="tab"
+                aria-selected={index === active}
+                className={`tap rounded-card border px-4 py-3 text-left ${index === active ? "border-ink bg-ink text-cream" : "border-line bg-foam text-ink"}`}
+                onClick={() => setActive(index)}
+              >
+                <span className={`font-display text-sm ${index === active ? "text-brass" : "text-oak"}`}>
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="mt-1 block font-display text-xl leading-tight">{service.title}</span>
+              </button>
+            ))}
           </div>
-        </article>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {rest.map((service) => {
-            const Icon = service.icon;
-            return (
-              <article key={service.title} className="rounded-card border border-line bg-foam p-6">
-                <Icon className="size-6 text-oak" aria-hidden="true" />
-                <h3 className="mt-4 font-display text-2xl">{service.title}</h3>
-                <p className="mt-2 text-sm text-muted">{service.summary}</p>
-                <ul className="mt-4 space-y-2">
-                  {service.benefits.map((benefit) => (
-                    <li key={benefit} className="flex items-start gap-2 text-sm">
-                      <Check className="mt-0.5 size-4 shrink-0 text-oak" aria-hidden="true" />
-                      {benefit}
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            );
-          })}
+          <article key={current.title} className="enter overflow-hidden rounded-card border border-line bg-foam lg:col-span-8">
+            <img src={current.photo} alt="" className="aspect-[16/10] w-full object-cover" />
+            <div className="p-6 md:p-8">
+              <Icon className="size-6 text-oak" aria-hidden="true" />
+              <h3 className="mt-4 font-display text-3xl">{current.title}</h3>
+              <p className="mt-3 max-w-xl text-muted">{current.summary}</p>
+              <ul className="mt-5 space-y-2">
+                {current.benefits.map((benefit) => (
+                  <li key={benefit} className="flex items-start gap-2 text-sm">
+                    <Check className="mt-0.5 size-4 shrink-0 text-oak" aria-hidden="true" />
+                    {benefit}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </article>
         </div>
       </div>
     </section>
@@ -226,32 +231,26 @@ function Testimonials() {
   const { copy } = useSiteContent();
   return (
     <section id="testemunhos" className="scroll-mt-20 bg-ink py-20 text-cream md:py-28">
-      <div className="mx-auto grid w-full max-w-6xl gap-12 px-5 md:px-8 lg:grid-cols-2">
-        <div>
+      <div className="mx-auto grid w-full max-w-6xl gap-12 px-5 md:px-8 lg:grid-cols-12">
+        <div className="lg:col-span-7">
           <p className="kicker text-brass">{copy.testimonialsKicker}</p>
           <h2 className="mt-3 font-display text-4xl leading-tight md:text-5xl">{copy.testimonialsTitle}</h2>
-          <figure className="mt-8 rounded-card border border-cream/15 bg-cream/5 p-6">
-            <div className="flex gap-1 text-brass" aria-label="Reação positiva">
-              {Array.from({ length: 5 }, (_, index) => (
-                <Star key={index} className="size-4 fill-current" aria-hidden="true" />
-              ))}
-            </div>
-            <blockquote className="mt-4 font-display text-5xl">“{copy.quote}”</blockquote>
-            <figcaption className="mt-4 text-sm text-cream/70">{copy.quoteBy}</figcaption>
+          <figure className="mt-10">
+            <blockquote className="font-display text-5xl leading-[1.05] md:text-7xl">“{copy.quote}”</blockquote>
+            <figcaption className="mt-6 max-w-md text-sm text-cream/70">{copy.quoteBy}</figcaption>
             <a href={copy.facebook} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-sm text-brass">
               <FacebookIcon className="size-4" />
               Ver a página
             </a>
           </figure>
-          <p className="mt-4 text-sm text-cream/60">{copy.testimonialsNote}</p>
+          <p className="mt-6 max-w-md text-sm text-cream/60">{copy.testimonialsNote}</p>
         </div>
-        <div>
-          <p className="kicker text-brass">Em cada obra</p>
-          <h3 className="mt-3 font-display text-3xl">{copy.promisesTitle}</h3>
-          <ul className="mt-8 space-y-3">
-            {copy.promises.map((item) => (
-              <li key={item} className="flex items-center gap-3 border-b border-cream/15 pb-3">
-                <Star className="size-4 shrink-0 fill-current text-brass" aria-hidden="true" />
+        <div className="lg:col-span-5 lg:pt-16">
+          <h3 className="font-display text-3xl">{copy.promisesTitle}</h3>
+          <ul className="mt-8">
+            {copy.promises.map((item, index) => (
+              <li key={item} className="flex items-start gap-4 border-t border-cream/15 py-4">
+                <span className="font-display text-brass">{String(index + 1).padStart(2, "0")}</span>
                 <span>{item}</span>
               </li>
             ))}
@@ -264,6 +263,7 @@ function Testimonials() {
 
 function Faq() {
   const { copy } = useSiteContent();
+  const [open, setOpen] = useState(0);
   return (
     <section id="faq" className="scroll-mt-20 bg-paper py-20 md:py-28">
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 md:px-8 lg:grid-cols-12">
@@ -273,20 +273,25 @@ function Faq() {
           <p className="mt-4 text-muted">{copy.faqIntro}</p>
         </div>
         <div className="lg:col-span-8">
-          {copy.faqs.map((item) => (
-            <details key={item.q} className="group border-b border-line py-4">
-              <summary className="flex items-center justify-between gap-4 font-medium">
-                {item.q}
-                <span className="mark-closed font-display text-2xl leading-none text-oak" aria-hidden="true">
-                  +
-                </span>
-                <span className="mark-open font-display text-2xl leading-none text-oak" aria-hidden="true">
-                  –
-                </span>
-              </summary>
-              <p className="mt-3 max-w-2xl text-muted">{item.a}</p>
-            </details>
-          ))}
+          {copy.faqs.map((item, index) => {
+            const shown = open === index;
+            return (
+              <div key={item.q} className="border-b border-line">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-4 py-4 text-left font-medium"
+                  aria-expanded={shown}
+                  onClick={() => setOpen(shown ? -1 : index)}
+                >
+                  {item.q}
+                  <span className="font-display text-2xl leading-none text-oak" aria-hidden="true">
+                    {shown ? "–" : "+"}
+                  </span>
+                </button>
+                {shown ? <p className="max-w-2xl pb-4 text-muted">{item.a}</p> : null}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -295,15 +300,8 @@ function Faq() {
 
 function GalleryTeaser() {
   const { copy } = useSiteContent();
-  const [projects, setProjects] = useState<GalleryProject[] | null>(null);
-
-  useEffect(() => {
-    listGallery()
-      .then(setProjects)
-      .catch(() => setProjects([]));
-  }, []);
-
-  const covers = (projects ?? []).flatMap((project) => project.photos.slice(0, 1)).slice(0, 3);
+  const projects = useStateProjects();
+  const shown = projects ?? [];
 
   return (
     <section className="bg-paper py-20 md:py-28">
@@ -319,18 +317,47 @@ function GalleryTeaser() {
             <ArrowRight className="size-4" aria-hidden="true" />
           </a>
         </div>
-        {covers.length > 0 ? (
-          <div className="mt-10 grid gap-3 md:grid-cols-3">
-            {covers.map((photo) => (
-              <a key={photo.id} href="/trabalhos" className="block overflow-hidden rounded-card bg-ink">
-                <img src={photo.src} alt={photo.alt} className="aspect-[4/3] w-full object-cover" />
-              </a>
-            ))}
-          </div>
-        ) : null}
       </div>
+      {shown.length > 0 ? (
+        <div className="film mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 md:px-8">
+          {shown.map((project) => {
+            const cover = project.photos[0];
+            if (!cover) return null;
+            return (
+              <a
+                key={project.id}
+                href={`/trabalhos#trabalho-${project.id}`}
+                className="group w-[78%] shrink-0 snap-start sm:w-[46%] lg:w-[31%]"
+              >
+                <span className="block overflow-hidden rounded-card bg-ink">
+                  <img
+                    src={cover.src}
+                    alt={cover.alt}
+                    className="aspect-[3/4] w-full object-cover transition duration-700 ease-out group-hover:scale-105"
+                  />
+                </span>
+                <span className="mt-3 block font-display text-2xl text-ink">{project.title}</span>
+                <span className="mt-1 block text-sm text-muted">
+                  {project.tag ? `${project.tag} · ` : ""}
+                  {project.photos.length} fotos
+                </span>
+              </a>
+            );
+          })}
+        </div>
+      ) : null}
     </section>
   );
+}
+
+function useStateProjects() {
+  const [projects, setProjects] = useState<GalleryProject[] | null>(null);
+  useEffect(() => {
+    listGallery()
+      .then(setProjects)
+      .catch(() => setProjects([]));
+  }, []);
+  return projects;
 }
 
 function Footer() {

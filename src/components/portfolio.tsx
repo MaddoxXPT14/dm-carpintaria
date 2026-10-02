@@ -34,37 +34,54 @@ export function Portfolio({ projects }: { projects: GalleryProject[] }) {
 
   return (
     <>
-      <div className="mt-12 flex flex-col gap-10">
-        {projects.map((item, workIndex) => (
-          <article key={item.id} className="overflow-hidden rounded-card border border-line bg-foam">
-            {item.photos.length > 0 ? (
-              <div className="grid grid-cols-2 gap-1 bg-line p-1 md:grid-cols-3">
-                {item.photos.map((image, photoIndex) => (
-                  <button
-                    key={image.id}
-                    type="button"
-                    onClick={() => setOpen({ work: workIndex, photo: photoIndex })}
-                    className="group relative aspect-[4/3] overflow-hidden bg-ink text-left"
-                  >
-                    <img
-                      src={image.src}
-                      alt={image.alt}
-                      className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-                      loading="lazy"
-                    />
-                  </button>
-                ))}
+      <div className="mt-12 flex flex-col gap-16">
+        {projects.map((item, workIndex) => {
+          const [cover, ...rest] = item.photos;
+          return (
+            <article key={item.id} id={`trabalho-${item.id}`} className="scroll-mt-24">
+              {cover ? (
+                <button
+                  type="button"
+                  onClick={() => setOpen({ work: workIndex, photo: 0 })}
+                  className="group block w-full overflow-hidden rounded-card bg-ink text-left"
+                >
+                  <img
+                    src={cover.src}
+                    alt={cover.alt}
+                    className="aspect-[16/9] w-full object-cover transition duration-700 ease-out group-hover:scale-[1.03]"
+                    loading="lazy"
+                  />
+                </button>
+              ) : (
+                <p className="text-muted">Este trabalho ainda não tem fotografias.</p>
+              )}
+              {rest.length > 0 ? (
+                <div className="mt-1 grid grid-cols-3 gap-1 sm:grid-cols-4 md:grid-cols-6">
+                  {rest.map((image, photoIndex) => (
+                    <button
+                      key={image.id}
+                      type="button"
+                      onClick={() => setOpen({ work: workIndex, photo: photoIndex + 1 })}
+                      className="group overflow-hidden rounded-card bg-ink"
+                    >
+                      <img
+                        src={image.src}
+                        alt={image.alt}
+                        className="aspect-square w-full object-cover transition duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <div className="mt-4 max-w-2xl">
+                {item.tag ? <p className="kicker">{item.tag}</p> : null}
+                <h2 className="mt-1 font-display text-3xl md:text-4xl">{item.title}</h2>
+                {item.body ? <p className="mt-2 text-muted">{item.body}</p> : null}
               </div>
-            ) : (
-              <p className="p-5 text-muted">Este trabalho ainda não tem fotografias.</p>
-            )}
-            <div className="p-5 md:p-6">
-              {item.tag ? <p className="kicker">{item.tag}</p> : null}
-              <h2 className="mt-1 font-display text-2xl md:text-3xl">{item.title}</h2>
-              {item.body ? <p className="mt-2 max-w-xl text-muted">{item.body}</p> : null}
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
 
       <dialog

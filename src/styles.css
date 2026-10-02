@@ -26,7 +26,9 @@
   }
 
   body {
-    background: var(--color-cream);
+    background:
+      radial-gradient(ellipse 80% 40% at 10% -10%, rgb(176 137 104 / 0.18), transparent 50%),
+      var(--color-cream);
     color: var(--color-ink);
     font-family: var(--font-sans);
     line-height: 1.55;
@@ -188,12 +190,30 @@ dialog.lightbox::backdrop {
   background: rgb(28 22 18 / 0.86);
 }
 
+@keyframes drift {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+
+.drift {
+  animation: drift 16s ease-out both;
+}
+
+.film {
+  scrollbar-width: none;
+}
+
+.film::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 
-  .enter {
+  .enter,
+  .drift {
     animation: none;
   }
 
