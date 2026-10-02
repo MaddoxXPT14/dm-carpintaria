@@ -38,6 +38,7 @@ export function HomePage() {
         <Hero />
         <About />
         <Services />
+        <GalleryTeaser />
         <Testimonials />
         <Faq />
         <Contact />
@@ -290,6 +291,25 @@ function Faq() {
             );
           })}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function GalleryTeaser() {
+  const { copy } = useSiteContent();
+  return (
+    <section className="bg-paper py-20 md:py-28">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-end justify-between gap-6 px-5 md:px-8">
+        <div className="max-w-2xl">
+          <p className="kicker">{copy.galleryKicker}</p>
+          <h2 className="mt-3 font-display text-4xl leading-tight text-ink md:text-5xl">{copy.galleryTitle}</h2>
+          <p className="mt-4 max-w-xl text-muted">{copy.galleryText}</p>
+        </div>
+        <a href="/trabalhos" className="tap btn btn-ink">
+          {copy.galleryButton}
+          <ArrowRight className="size-4" aria-hidden="true" />
+        </a>
       </div>
     </section>
   );
