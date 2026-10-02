@@ -190,7 +190,7 @@ async function publish(store: Store) {
     await exec("git", ["add", "data/content.json"], { cwd: "/workspace" });
     const status = await exec("git", ["diff", "--cached", "--name-only"], { cwd: "/workspace" });
     if (!status.stdout.includes("data/content.json")) return true;
-    await exec("git", ["commit", "-m", "Atualiza os textos do site"], { cwd: "/workspace" });
+    await exec("git", ["commit", "-m", "Guarda as alterações do site"], { cwd: "/workspace" });
     await exec("git", ["push", "origin", "main"], { cwd: "/workspace" });
     return true;
   } catch {
@@ -220,7 +220,46 @@ export const listManagedGallery = createServerFn({ method: "POST" })
   .validator(z.object({ password: z.string().min(1) }))
   .handler(async ({ data }) => {
     const store = await requirePassword(data.password);
-    return store.projects;
+    return { savedAt: store.savedAt, copy: store.copy, projects: store.projects };
+  });
+
+const projectSchema = z.object({
+  id: z.number().int().positive(),
+  title: z.string().trim().min(1).max(120),
+  tag: z.string().trim().max(40),
+  body: z.string().trim().max(500),
+  hidden: z.boolean().optional(),
+  photos: z
+    .array(
+      z.object({
+        id: z.number().int().positive(),
+        alt: z.string().max(180),
+        src: z.string().min(1).max(2_000_000),
+      }),
+    )
+    .max(40),
+});
+
+export const restoreManagedContent = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      password: z.string().min(1),
+      savedAt: z.number().int().nonnegative(),
+      copy: copySchema,
+      projects: z.array(projectSchema).max(80),
+    }),
+  )
+  .handler(async ({ data }) => {
+    const store = await requirePassword(data.password);
+    if (data.savedAt <= store.savedAt) {
+      return { savedAt: store.savedAt, copy: store.copy, projects: store.projects, restored: false };
+    }
+    store.copy = data.copy;
+    store.projects = data.projects;
+    store.nextId = nextIdFrom(data.projects);
+    store.savedAt = data.savedAt;
+    await publish(store);
+    return { savedAt: store.savedAt, copy: store.copy, projects: store.projects, restored: true };
   });
 
 export const checkGalleryPassword = createServerFn({ method: "POST" })

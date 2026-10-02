@@ -6,10 +6,36 @@ import {
   deleteGalleryPhoto,
   deleteGalleryProject,
   listManagedGallery,
+  restoreManagedContent,
   setProjectHidden,
   updateGalleryProject,
 } from "@/lib/gallery.functions";
+import type { SiteCopy } from "@/lib/content";
 import type { GalleryProject } from "@/lib/gallery";
+
+const backupKey = "dm-carpintaria-conteudo";
+
+type Backup = { savedAt: number; copy: SiteCopy; projects: GalleryProject[] };
+
+function readBackup(): Backup | null {
+  try {
+    const raw = localStorage.getItem(backupKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Backup;
+    if (!parsed?.savedAt || !Array.isArray(parsed.projects) || !parsed.copy) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeBackup(snapshot: Backup) {
+  try {
+    localStorage.setItem(backupKey, JSON.stringify(snapshot));
+  } catch {
+    // The browser refused the copy. The server still has this version.
+  }
+}
 
 export function WorksManager({
   password,
@@ -25,7 +51,13 @@ export function WorksManager({
   const [busy, setBusy] = useState(false);
 
   async function refresh(keep?: number | "new" | null) {
-    const next = await listManagedGallery({ data: { password } });
+    let snapshot = await listManagedGallery({ data: { password } });
+    const backup = readBackup();
+    if (backup && backup.savedAt > snapshot.savedAt && backup.projects.length > 0) {
+      snapshot = await restoreManagedContent({ data: { password, ...backup } });
+    }
+    writeBackup(snapshot);
+    const next = snapshot.projects;
     setProjects(next);
     setSelected((current) => {
       const choice = keep === undefined ? current : keep;
