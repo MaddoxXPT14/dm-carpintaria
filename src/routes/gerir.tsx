@@ -360,6 +360,8 @@ function TextEditor({
             <Field label="Botão secundário" value={draft.heroSecondary} onChange={(value) => set("heroSecondary", value)} />
             <Lines label="Notas, uma por linha" value={draft.heroNotes} onChange={(value) => set("heroNotes", value)} />
             <Field label="Legenda da imagem" value={draft.heroBadge} onChange={(value) => set("heroBadge", value)} />
+            <PhotoField label="Fotografia de entrada" value={draft.heroImage} onChange={(value) => set("heroImage", value)} />
+            <Field label="Descrição da fotografia" value={draft.heroImageAlt} onChange={(value) => set("heroImageAlt", value)} />
           </>
         ) : null}
         {menu === "sobre" ? (
@@ -368,6 +370,9 @@ function TextEditor({
             <Field label="Título" value={draft.aboutTitle} onChange={(value) => set("aboutTitle", value)} />
             <Field label="Primeiro texto" value={draft.aboutP1} onChange={(value) => set("aboutP1", value)} area />
             <Field label="Segundo texto" value={draft.aboutP2} onChange={(value) => set("aboutP2", value)} area />
+            <PhotoField label="Fotografia" value={draft.aboutImage} onChange={(value) => set("aboutImage", value)} />
+            <Field label="Descrição da fotografia" value={draft.aboutImageAlt} onChange={(value) => set("aboutImageAlt", value)} />
+            <Field label="Legenda por baixo da fotografia" value={draft.aboutCaption} onChange={(value) => set("aboutCaption", value)} />
             <Field label="Missão" value={draft.mission} onChange={(value) => set("mission", value)} area />
             <Field label="Visão" value={draft.vision} onChange={(value) => set("vision", value)} area />
             <Field label="Valores" value={draft.values} onChange={(value) => set("values", value)} area />
@@ -440,6 +445,16 @@ function TextEditor({
                     )
                   }
                 />
+                <PhotoField
+                  label="Fotografia deste serviço"
+                  value={service.image}
+                  onChange={(value) =>
+                    set(
+                      "services",
+                      draft.services.map((item, itemIndex) => (itemIndex === open ? { ...item, image: value } : item)),
+                    )
+                  }
+                />
               </fieldset>
             ) : null}
           </>
@@ -504,6 +519,8 @@ function TextEditor({
             <Field label="Pequeno texto por cima" value={draft.contactKicker} onChange={(value) => set("contactKicker", value)} />
             <Field label="Título" value={draft.contactTitle} onChange={(value) => set("contactTitle", value)} />
             <Field label="Texto" value={draft.contactText} onChange={(value) => set("contactText", value)} area />
+            <Field label="Título se ainda não houver morada" value={draft.visitTitle} onChange={(value) => set("visitTitle", value)} />
+            <Field label="Texto se ainda não houver morada" value={draft.visitText} onChange={(value) => set("visitText", value)} area />
             <Field label="Telefone" value={draft.phone} onChange={(value) => set("phone", value)} />
             <Field label="Email" value={draft.email} onChange={(value) => set("email", value)} />
             <Field label="Morada" value={draft.address} onChange={(value) => set("address", value)} />
@@ -544,6 +561,26 @@ function OneOf({ labels, index, onPick }: { labels: string[]; index: number; onP
         </button>
       ))}
     </div>
+  );
+}
+
+function PhotoField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="grid gap-2 text-sm">
+      <span className="text-muted">{label}</span>
+      {value ? <img src={value} alt="" className="aspect-[16/10] w-full max-w-sm rounded-card object-cover" /> : null}
+      <input
+        type="file"
+        accept="image/*"
+        className="text-sm"
+        onChange={async (event) => {
+          const file = event.currentTarget.files?.[0];
+          event.currentTarget.value = "";
+          if (!file) return;
+          onChange(await shrink(file));
+        }}
+      />
+    </label>
   );
 }
 

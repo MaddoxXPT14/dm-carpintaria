@@ -5,6 +5,7 @@ export type CopyService = {
   title: string;
   summary: string;
   benefits: string[];
+  image: string;
 };
 
 export type CopyStep = { n: string; title: string; text: string };
@@ -18,10 +19,15 @@ export type SiteCopy = {
   heroSecondary: string;
   heroNotes: string[];
   heroBadge: string;
+  heroImage: string;
+  heroImageAlt: string;
   aboutKicker: string;
   aboutTitle: string;
   aboutP1: string;
   aboutP2: string;
+  aboutImage: string;
+  aboutImageAlt: string;
+  aboutCaption: string;
   mission: string;
   vision: string;
   values: string;
@@ -50,6 +56,8 @@ export type SiteCopy = {
   contactKicker: string;
   contactTitle: string;
   contactText: string;
+  visitTitle: string;
+  visitText: string;
   footerText: string;
   phone: string;
   email: string;
@@ -67,11 +75,16 @@ export const defaultCopy: SiteCopy = {
   heroSecondary: "Contactar",
   heroNotes: ["Medição no local", "Orçamento sem compromisso", "Montagem incluída"],
   heroBadge: "Painel ripado em carvalho",
+  heroImage: "/gallery/fb/sala.jpg",
+  heroImageAlt: "Sala concluída com painel ripado em carvalho e base de televisão, obra da DM Carpintaria",
   aboutKicker: "Sobre nós",
   aboutTitle: "Quem mede é quem monta.",
   aboutP1:
     "A DM Carpintaria faz interiores em madeira: paredes de televisão, móveis integrados, cozinhas, roupeiros e portas. O trabalho que publicamos — uma base de TV com painel ripado em carvalho — resume o ofício: uma peça desenhada para aquela parede, não adaptada de um catálogo.",
   aboutP2: "Fala diretamente com quem executa. Sem balcão pelo meio, do primeiro contacto ao dia da montagem.",
+  aboutImage: "/gallery/fb/carrinha.jpg",
+  aboutImageAlt: "Carrinha branca da DM Carpintaria com o telefone e o email",
+  aboutCaption: "A carrinha com que chegamos à obra.",
   mission: "Entregar carpintaria bem feita, com materiais honestos e um resultado que se reconhece no dia da montagem.",
   vision: "Ser a oficina a que se volta quando a casa pede o que o catálogo não tem.",
   values: "Rigor nas medidas, clareza no preço, respeito pela madeira e cuidado dentro de casa.",
@@ -89,31 +102,37 @@ export const defaultCopy: SiteCopy = {
       title: "Painéis ripados e paredes de TV",
       summary: "A televisão deixa de ficar pendurada numa parede vazia. O painel integra o ecrã, esconde cabos e dá ritmo à sala.",
       benefits: ["Cabos fora de vista", "À medida do ecrã e do móvel", "Carvalho e outras madeiras"],
+      image: "/gallery/fb/ripas.jpg",
     },
     {
       title: "Mobiliário à medida",
       summary: "Estantes, secretárias, cabeceiras e aparadores desenhados para a parede que já existe — não o contrário.",
       benefits: ["Medidas do espaço real", "Arrumação onde faz falta", "Acabamento combinado consigo"],
+      image: "/gallery/fb/conjunto.jpg",
     },
     {
       title: "Cozinhas",
       summary: "Frentes, ilhas e despensas pensadas para o uso diário. Madeira onde se vê, resistência onde se trabalha.",
       benefits: ["Projeto alinhado com a obra", "Ferragens escolhidas consigo", "Montagem no local"],
+      image: "/gallery/fb/luz.jpg",
     },
     {
       title: "Roupeiros e closets",
       summary: "Portas à face, interiores com luz e prateleiras na altura certa. O quarto fica mais calmo e a roupa, arrumada.",
       benefits: ["Interior desenhado consigo", "Portas que não batem no espaço", "Acabamento uniforme"],
+      image: "/gallery/fb/lateral.jpg",
     },
     {
       title: "Portas e aros",
       summary: "Portas de interior em madeira, com aro, sombra e puxador escolhidos para fechar a divisão com critério.",
       benefits: ["Madeira maciça ou folheada", "Aro alinhado com o pavimento", "Pormenor de puxador"],
+      image: "/gallery/fb/angulo.jpg",
     },
     {
       title: "Revestimentos e ripados",
       summary: "Paredes, lambris e pormenores que ligam as divisões. A mesma linguagem de madeira em toda a casa.",
       benefits: ["Continuidade entre divisões", "Proteção da parede", "Leitura mais quente do espaço"],
+      image: "/gallery/fb/sala.jpg",
     },
   ],
   testimonialsKicker: "Testemunhos",
@@ -173,6 +192,8 @@ export const defaultCopy: SiteCopy = {
   contactTitle: "Conte-nos a divisão. Nós tratamos da madeira.",
   contactText:
     "O pedido abre uma conversa no WhatsApp, para respondermos no mesmo sítio onde já falamos com clientes. Não guardamos os dados neste site.",
+  visitTitle: "Visita na sua obra",
+  visitText: "A morada da oficina é combinada no contacto. Envie a zona da obra no pedido.",
   footerText: "Interiores em madeira à medida.",
   phone: "+351 911 829 220",
   email: "davidmarcal23@hotmail.com",

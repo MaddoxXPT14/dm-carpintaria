@@ -116,10 +116,8 @@ export function Contact() {
             ) : (
               <div className="flex h-44 flex-col justify-end bg-ink p-5 text-cream">
                 <MapPin className="size-5 text-brass" aria-hidden="true" />
-                <p className="mt-3 font-display text-2xl">Visita na sua obra</p>
-                <p className="mt-1 text-sm text-cream/80">
-                  A morada da oficina é combinada no contacto. Envie a zona da obra no pedido.
-                </p>
+                <p className="mt-3 font-display text-2xl">{copy.visitTitle}</p>
+                <p className="mt-1 text-sm text-cream/80">{copy.visitText}</p>
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 p-4">

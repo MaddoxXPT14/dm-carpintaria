@@ -63,8 +63,8 @@ function Hero() {
     <section className="relative">
       <div className="relative h-[68vw] min-h-[420px] overflow-hidden bg-ink lg:h-[78vh] lg:max-h-[860px]">
         <img
-          src="/gallery/fb/sala.jpg"
-          alt="Sala concluída com painel ripado em carvalho e base de televisão, obra da DM Carpintaria"
+          src={copy.heroImage}
+          alt={copy.heroImageAlt}
           width={2048}
           height={1536}
           fetchPriority="high"
@@ -125,12 +125,12 @@ function About() {
         </div>
         <figure>
           <img
-            src="/gallery/fb/carrinha.jpg"
-            alt="Carrinha branca da DM Carpintaria com o telefone e o email"
+            src={copy.aboutImage}
+            alt={copy.aboutImageAlt}
             className="aspect-video w-full rounded-card object-cover"
             loading="lazy"
           />
-          <figcaption className="mt-3 text-sm text-cream/60">A carrinha com que chegamos à obra.</figcaption>
+          <figcaption className="mt-3 text-sm text-cream/60">{copy.aboutCaption}</figcaption>
         </figure>
       </div>
       <div className="mx-auto mt-16 w-full max-w-6xl px-5 md:px-8">
@@ -157,22 +157,12 @@ function Value({ title, text }: { title: string; text: string }) {
   );
 }
 
-const servicePhotos = [
-  "/gallery/fb/ripas.jpg",
-  "/gallery/fb/conjunto.jpg",
-  "/gallery/fb/luz.jpg",
-  "/gallery/fb/lateral.jpg",
-  "/gallery/fb/angulo.jpg",
-  "/gallery/fb/sala.jpg",
-];
-
 function Services() {
   const { copy } = useSiteContent();
   const [active, setActive] = useState(0);
   const items = copy.services.map((service, index) => ({
     ...service,
     icon: serviceIcons[index]?.icon ?? serviceIcons[0].icon,
-    photo: servicePhotos[index % servicePhotos.length],
   }));
   const current = items[active] ?? items[0];
   if (!current) return null;
@@ -204,7 +194,7 @@ function Services() {
             ))}
           </div>
           <article key={current.title} className="enter overflow-hidden rounded-card border border-line bg-foam lg:col-span-8">
-            <img src={current.photo} alt="" className="aspect-[16/10] w-full object-cover" />
+            <img src={current.image} alt="" className="aspect-[16/10] w-full object-cover" />
             <div className="p-6 md:p-8">
               <Icon className="size-6 text-oak" aria-hidden="true" />
               <h3 className="mt-4 font-display text-3xl">{current.title}</h3>

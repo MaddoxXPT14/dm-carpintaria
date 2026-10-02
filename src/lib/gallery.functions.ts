@@ -21,10 +21,15 @@ const copySchema = z.object({
   heroSecondary: z.string().trim().max(40),
   heroNotes: z.array(z.string().trim().max(80)).max(4),
   heroBadge: z.string().trim().max(80),
+  heroImage: z.string().max(2_000_000),
+  heroImageAlt: z.string().trim().max(180),
   aboutKicker: z.string().trim().max(40),
   aboutTitle: z.string().trim().max(160),
   aboutP1: z.string().trim().max(800),
   aboutP2: z.string().trim().max(500),
+  aboutImage: z.string().max(2_000_000),
+  aboutImageAlt: z.string().trim().max(180),
+  aboutCaption: z.string().trim().max(180),
   mission: z.string().trim().max(400),
   vision: z.string().trim().max(400),
   values: z.string().trim().max(400),
@@ -38,6 +43,7 @@ const copySchema = z.object({
         title: z.string().trim().min(2).max(120),
         summary: z.string().trim().max(500),
         benefits: z.array(z.string().trim().max(160)).max(6),
+        image: z.string().max(2_000_000).default(""),
       }),
     )
     .min(1)
@@ -62,6 +68,8 @@ const copySchema = z.object({
   contactKicker: z.string().trim().max(40),
   contactTitle: z.string().trim().max(160),
   contactText: z.string().trim().max(500),
+  visitTitle: z.string().trim().max(80),
+  visitText: z.string().trim().max(300),
   footerText: z.string().trim().max(200),
   phone: z.string().trim().min(6).max(40),
   email: z.string().trim().email().max(120),
@@ -169,7 +177,20 @@ async function touch(sql: Sql) {
 function asCopy(value: unknown): SiteCopy {
   const stored = typeof value === "string" ? JSON.parse(value) : value;
   if (!stored || typeof stored !== "object") return defaultCopy;
-  return { ...defaultCopy, ...(stored as SiteCopy) };
+  const merged = { ...defaultCopy, ...(stored as SiteCopy) };
+  const services = Array.isArray(merged.services) ? merged.services : defaultCopy.services;
+  merged.services = services.map((service, index) => ({
+    title: service.title,
+    summary: service.summary,
+    benefits: service.benefits ?? [],
+    image: service.image || defaultCopy.services[index]?.image || "",
+  }));
+  if (!merged.heroImage) merged.heroImage = defaultCopy.heroImage;
+  if (!merged.aboutImage) merged.aboutImage = defaultCopy.aboutImage;
+  if (!merged.aboutCaption) merged.aboutCaption = defaultCopy.aboutCaption;
+  if (!merged.visitTitle) merged.visitTitle = defaultCopy.visitTitle;
+  if (!merged.visitText) merged.visitText = defaultCopy.visitText;
+  return merged;
 }
 
 async function readCopy(sql: Sql) {
