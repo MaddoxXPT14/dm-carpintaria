@@ -14,7 +14,8 @@ export function Contact() {
   const { copy } = useSiteContent();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Errors>({});
-  const [sent, setSent] = useState<{ href: string; channel: Channel } | null>(null);
+  const [sent, setSent] = useState<{ href: string; channel: Channel; message: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   function update(field: keyof typeof initial, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -56,26 +57,36 @@ export function Contact() {
     trackLead();
     if (channel === "whatsapp") {
       const href = whatsappHref(text, waNumber(copy.phone));
-      setSent({ href, channel });
+      setSent({ href, channel, message: text });
       const opened = window.open(href, "_blank", "noopener,noreferrer");
       if (!opened) window.location.href = href;
       return;
     }
     if (channel === "email") {
       const href = `mailto:${copy.email}?subject=${encodeURIComponent("Pedido de orçamento — DM Carpintaria")}&body=${encodeURIComponent(text)}`;
-      setSent({ href, channel });
+      setSent({ href, channel, message: text });
       window.location.href = href;
       return;
     }
+    setCopied(false);
+    setSent({ href: messengerHref(copy.facebook || site.facebook), channel, message: text });
+  }
+
+  async function copyMessage(text: string) {
     try {
       await navigator.clipboard.writeText(text);
     } catch {
-      // The Facebook window still opens; the visitor can copy from the confirmation.
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.left = "-9999px";
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
     }
-    const href = messengerHref(copy.facebook || site.facebook);
-    setSent({ href, channel });
-    const opened = window.open(href, "_blank", "noopener,noreferrer");
-    if (!opened) window.location.href = href;
+    setCopied(true);
   }
 
   const mapsHref = copy.address
@@ -181,8 +192,22 @@ export function Contact() {
               <p className="kicker">Pedido pronto</p>
               <h3 className="mt-3 font-display text-4xl">{sentCopy[sent.channel].title}</h3>
               <p className="mt-3 max-w-md text-muted">{sentCopy[sent.channel].text}</p>
+              {sent.channel === "facebook" ? (
+                <textarea
+                  readOnly
+                  value={sent.message}
+                  className="field mt-4 min-h-40 py-3"
+                  aria-label="Mensagem para colar no Facebook"
+                  onFocus={(event) => event.currentTarget.select()}
+                />
+              ) : null}
               <div className="mt-6 flex flex-wrap gap-3">
-                <a href={sent.href} target="_blank" rel="noreferrer" className="tap btn btn-ink">
+                {sent.channel === "facebook" ? (
+                  <button type="button" className="tap btn btn-ink" onClick={() => void copyMessage(sent.message)}>
+                    {copied ? "Mensagem copiada" : "Copiar mensagem"}
+                  </button>
+                ) : null}
+                <a href={sent.href} target="_blank" rel="noreferrer" className={`tap btn ${sent.channel === "facebook" ? "btn-line" : "btn-ink"}`}>
                   {sent.channel === "email" ? <Mail className="size-4" /> : null}
                   {sent.channel === "whatsapp" ? <WhatsAppIcon className="size-4" /> : null}
                   {sent.channel === "facebook" ? <FacebookIcon className="size-4" /> : null}
@@ -193,6 +218,7 @@ export function Contact() {
                   className="tap btn btn-line"
                   onClick={() => {
                     setSent(null);
+                    setCopied(false);
                     setValues(initial);
                   }}
                 >
@@ -326,8 +352,8 @@ const sentCopy: Record<Channel, { title: string; text: string; action: string }>
     action: "Abrir email",
   },
   facebook: {
-    title: "A mensagem foi copiada.",
-    text: "O Facebook não aceita o texto automaticamente. Na conversa, cole a mensagem e envie.",
+    title: "Mensagem pronta a colar.",
+    text: "O Facebook não deixa preencher a conversa a partir do site. Copie o texto e cole-o na mensagem.",
     action: "Abrir Facebook",
   },
 };
