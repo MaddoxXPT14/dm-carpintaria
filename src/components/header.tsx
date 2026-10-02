@@ -20,9 +20,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-cream/95 backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5 md:h-18 md:px-8">
-        <a href="/" className="flex items-baseline gap-2" onClick={() => setOpen(false)}>
-          <span className="font-display text-2xl leading-none tracking-tight">DM</span>
-          <span className="text-xs font-medium uppercase tracking-widest text-muted">Carpintaria</span>
+        <a href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
+          <img src="/logo.jpg" alt="DM Carpintaria" className="h-11 w-auto" />
         </a>
 
         <nav className="hidden items-center gap-5 xl:flex" aria-label="Secções">
