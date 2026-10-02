@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type DragEvent, type FormEvent } from "react";
 import {
   addGalleryProject,
   addProjectPhotos,
@@ -183,15 +183,25 @@ function NewWork({
   onCancel: () => void;
   onCreate: (input: { title: string; tag: string; body: string; images: { alt: string; data: string }[] }) => void;
 }) {
+  const [sending, setSending] = useState(false);
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const files = data.getAll("photos").filter((item): item is File => item instanceof File && item.size > 0);
+    if (sending) return;
+    const form = event.currentTarget;
+    const files = Array.from(form.elements)
+      .filter((element): element is HTMLInputElement => element instanceof HTMLInputElement && element.type === "file")
+      .flatMap((element) => Array.from(element.files ?? []));
     if (files.length === 0) return;
+    setSending(true);
+    const data = new FormData(form);
     const title = String(data.get("title") ?? "");
+    const tag = String(data.get("tag") ?? "");
+    const body = String(data.get("body") ?? "");
     const images = [];
     for (const file of files.slice(0, 12)) images.push({ alt: title, data: await shrink(file) });
-    onCreate({ title, tag: String(data.get("tag") ?? ""), body: String(data.get("body") ?? ""), images });
+    form.reset();
+    onCreate({ title, tag, body, images });
   }
 
   return (
@@ -202,7 +212,7 @@ function NewWork({
       <textarea name="body" rows={4} placeholder="Texto que aparece por baixo das fotos" className="rounded-card border border-line bg-cream px-3 py-2" />
       <input name="photos" type="file" accept="image/*" multiple required className="text-sm" />
       <div className="flex flex-wrap gap-2">
-        <button type="submit" className="tap btn btn-ink" disabled={busy}>
+        <button type="submit" className="tap btn btn-ink" disabled={busy || sending}>
           {busy ? "A guardar…" : "Publicar trabalho"}
         </button>
         <button type="button" className="tap btn btn-line" onClick={onCancel}>
@@ -235,27 +245,62 @@ function WorkEditor({
   const [title, setTitle] = useState(project.title);
   const [tag, setTag] = useState(project.tag);
   const [body, setBody] = useState(project.body);
+  const [photos, setPhotos] = useState(project.photos);
+  const [fileKey, setFileKey] = useState(0);
   const [captions, setCaptions] = useState<Record<number, string>>(() =>
     Object.fromEntries(project.photos.map((photo) => [photo.id, photo.alt])),
   );
+  const order = project.photos.map((photo) => photo.id).join(",");
+
+  useEffect(() => {
+    setPhotos(project.photos);
+    setCaptions((current) => {
+      const next = { ...current };
+      for (const photo of project.photos) {
+        if (next[photo.id] == null) next[photo.id] = photo.alt;
+      }
+      return next;
+    });
+  }, [order]);
+
+  function commitOrder(next: typeof photos) {
+    setPhotos(next);
+    onArrange(next.map((photo) => photo.id));
+  }
 
   function movePhoto(index: number, direction: number) {
-    const ids = project.photos.map((photo) => photo.id);
-    const next = index + direction;
-    if (next < 0 || next >= ids.length) return;
-    const [item] = ids.splice(index, 1);
-    ids.splice(next, 0, item);
-    onArrange(ids);
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= photos.length) return;
+    const next = photos.slice();
+    const [item] = next.splice(index, 1);
+    next.splice(nextIndex, 0, item);
+    commitOrder(next);
+  }
+
+  function dropPhoto(event: DragEvent<HTMLElement>, targetId: number) {
+    event.preventDefault();
+    const sourceId = Number(event.dataTransfer.getData("text/plain"));
+    if (!sourceId || sourceId === targetId) return;
+    const from = photos.findIndex((photo) => photo.id === sourceId);
+    const to = photos.findIndex((photo) => photo.id === targetId);
+    if (from < 0 || to < 0) return;
+    const next = photos.slice();
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    commitOrder(next);
   }
 
   async function addPhotos(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const files = data.getAll("photos").filter((item): item is File => item instanceof File && item.size > 0);
+    const form = event.currentTarget;
+    const files = Array.from(form.elements)
+      .filter((element): element is HTMLInputElement => element instanceof HTMLInputElement && element.type === "file")
+      .flatMap((element) => Array.from(element.files ?? []));
     if (files.length === 0) return;
     const images = [];
     for (const file of files.slice(0, 12)) images.push({ alt: title, data: await shrink(file) });
-    event.currentTarget.reset();
+    form.reset();
+    setFileKey((current) => current + 1);
     onPhotos(images);
   }
 
@@ -277,7 +322,7 @@ function WorkEditor({
             title,
             tag,
             body,
-            captions: project.photos.map((photo) => ({ id: photo.id, alt: captions[photo.id] ?? photo.alt })),
+            captions: photos.map((photo) => ({ id: photo.id, alt: captions[photo.id] ?? photo.alt })),
           });
         }}
       >
@@ -288,31 +333,34 @@ function WorkEditor({
           {busy ? "A guardar…" : "Guardar texto e legendas"}
         </button>
       </form>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {project.photos.map((photo, index) => (
-          <article key={photo.id} className="overflow-hidden rounded-card border border-line bg-foam">
-            <img src={photo.src} alt={captions[photo.id] || photo.alt} className="aspect-[4/3] w-full object-cover" />
-            <div className="grid gap-2 p-3">
-              <p className="text-xs uppercase tracking-widest text-muted">{index === 0 ? "Capa" : `Foto ${index + 1}`}</p>
+      <p className="text-sm text-muted">Arrasta as fotos, ou usa as setas, para mudar a ordem. A primeira é a capa.</p>
+      <div className="grid gap-3">
+        {photos.map((photo, index) => (
+          <article
+            key={photo.id}
+            draggable
+            onDragStart={(event) => event.dataTransfer.setData("text/plain", String(photo.id))}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => dropPhoto(event, photo.id)}
+            className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 rounded-card border border-line bg-foam p-3 sm:grid-cols-[140px_minmax(0,1fr)]"
+          >
+            <img src={photo.src} alt={captions[photo.id] || photo.alt} className="aspect-[4/3] w-full rounded-card object-cover" />
+            <div className="grid content-start gap-2">
+              <p className="text-xs uppercase tracking-widest text-muted">{index === 0 ? `1 · Capa` : String(index + 1)}</p>
               <input
                 value={captions[photo.id] ?? ""}
                 onChange={(event) => setCaptions((current) => ({ ...current, [photo.id]: event.target.value }))}
                 placeholder="Legenda"
                 className="h-10 rounded-card border border-line bg-cream px-3 text-sm"
               />
-              <div className="flex flex-wrap gap-2 text-sm">
-                <button type="button" className="tap" disabled={busy || index === 0} onClick={() => movePhoto(index, -1)}>
-                  Antes
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className="tap btn btn-line" disabled={busy || index === 0} onClick={() => movePhoto(index, -1)}>
+                  Subir
                 </button>
-                <button type="button" className="tap" disabled={busy || index === project.photos.length - 1} onClick={() => movePhoto(index, 1)}>
-                  Depois
+                <button type="button" className="tap btn btn-line" disabled={busy || index === photos.length - 1} onClick={() => movePhoto(index, 1)}>
+                  Descer
                 </button>
-                {index > 0 ? (
-                  <button type="button" className="tap" disabled={busy} onClick={() => onArrange([photo.id, ...project.photos.filter((item) => item.id !== photo.id).map((item) => item.id)])}>
-                    Capa
-                  </button>
-                ) : null}
-                <button type="button" className="tap text-oak-deep" disabled={busy} onClick={() => onRemovePhoto(photo.id)}>
+                <button type="button" className="tap text-sm text-oak-deep" disabled={busy} onClick={() => onRemovePhoto(photo.id)}>
                   Tirar
                 </button>
               </div>
@@ -321,7 +369,7 @@ function WorkEditor({
         ))}
       </div>
       <form onSubmit={addPhotos} className="flex flex-wrap items-center gap-3">
-        <input name="photos" type="file" accept="image/*" multiple className="text-sm" />
+        <input key={fileKey} name="photos" type="file" accept="image/*" multiple className="text-sm" />
         <button type="submit" className="tap btn btn-line" disabled={busy}>
           Juntar fotos
         </button>

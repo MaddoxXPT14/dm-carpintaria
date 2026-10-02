@@ -323,10 +323,13 @@ export const addProjectPhotos = createServerFn({ method: "POST" })
     const store = await requirePassword(data.password);
     const project = store.projects.find((item) => item.id === data.id);
     if (!project) throw new Error("Esse trabalho já não está na galeria.");
+    const existing = new Set(project.photos.map((photo) => photo.src));
     for (const image of data.images) {
+      if (existing.has(image.data)) continue;
       const photoId = store.nextId;
       store.nextId += 1;
       project.photos.push({ id: photoId, alt: image.alt || project.title, src: image.data });
+      existing.add(image.data);
     }
     const published = await publish(store);
     return { published };
