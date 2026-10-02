@@ -366,12 +366,22 @@ export const arrangeGallery = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const sql = await requirePassword(data.password);
-    for (let index = 0; index < data.ids.length; index += 1) {
-      if (data.projectId) {
-        await sql`update gallery_photos set position = ${index} where id = ${data.ids[index]} and project_id = ${data.projectId}`;
-      } else {
-        await sql`update gallery_projects set position = ${index} where id = ${data.ids[index]}`;
-      }
+    if (data.projectId) {
+      await sql.query(
+        `update gallery_photos as photo
+         set position = ord.position
+         from unnest($1::int[], $2::int[]) as ord(id, position)
+         where photo.id = ord.id and photo.project_id = $3`,
+        [data.ids, data.ids.map((_, index) => index), data.projectId],
+      );
+    } else {
+      await sql.query(
+        `update gallery_projects as project
+         set position = ord.position
+         from unnest($1::int[], $2::int[]) as ord(id, position)
+         where project.id = ord.id`,
+        [data.ids, data.ids.map((_, index) => index)],
+      );
     }
     await touch(sql);
     return { published: true };

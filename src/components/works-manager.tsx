@@ -311,9 +311,10 @@ function WorkEditor({
     onArrange(next.map((photo) => photo.id));
   }
 
-  function movePhoto(index: number, direction: number) {
-    const nextIndex = index + direction;
-    if (nextIndex < 0 || nextIndex >= photos.length) return;
+  function placePhoto(index: number, target: number) {
+    if (!Number.isFinite(target)) return;
+    const nextIndex = Math.max(0, Math.min(photos.length - 1, Math.round(target)));
+    if (nextIndex === index) return;
     const next = photos.slice();
     const [item] = next.splice(index, 1);
     next.splice(nextIndex, 0, item);
@@ -376,7 +377,7 @@ function WorkEditor({
           {busy ? "A guardar…" : "Guardar texto e legendas"}
         </button>
       </form>
-      <p className="text-sm text-muted">Arrasta as fotos, ou usa as setas, para mudar a ordem. A primeira é a capa.</p>
+      <p className="text-sm text-muted">A posição 1 é a capa. Escreve o número da posição ou usa Capa.</p>
       <div className="grid gap-3">
         {photos.map((photo, index) => (
           <article
@@ -396,13 +397,35 @@ function WorkEditor({
                 placeholder="Legenda"
                 className="h-10 rounded-card border border-line bg-cream px-3 text-sm"
               />
-              <div className="flex flex-wrap gap-2">
-                <button type="button" className="tap btn btn-line" disabled={busy || index === 0} onClick={() => movePhoto(index, -1)}>
-                  Subir
-                </button>
-                <button type="button" className="tap btn btn-line" disabled={busy || index === photos.length - 1} onClick={() => movePhoto(index, 1)}>
-                  Descer
-                </button>
+              <div className="flex flex-wrap items-center gap-2">
+                {photos.length > 1 ? (
+                  <>
+                    <label className="flex items-center gap-2 text-sm text-muted">
+                      Posição
+                      <input
+                        key={`${photo.id}-${index}`}
+                        type="number"
+                        min={1}
+                        max={photos.length}
+                        defaultValue={index + 1}
+                        disabled={busy}
+                        aria-label={`Posição da foto ${index + 1}`}
+                        className="h-10 w-16 rounded-card border border-line bg-cream px-2 text-ink"
+                        onBlur={(event) => placePhoto(index, Number(event.target.value) - 1)}
+                        onKeyDown={(event) => {
+                          if (event.key !== "Enter") return;
+                          event.preventDefault();
+                          placePhoto(index, Number(event.currentTarget.value) - 1);
+                        }}
+                      />
+                    </label>
+                    {index === 0 ? null : (
+                      <button type="button" className="tap btn btn-line" disabled={busy} onClick={() => placePhoto(index, 0)}>
+                        Capa
+                      </button>
+                    )}
+                  </>
+                ) : null}
                 <button type="button" className="tap text-sm text-oak-deep" disabled={busy} onClick={() => onRemovePhoto(photo.id)}>
                   Tirar
                 </button>
