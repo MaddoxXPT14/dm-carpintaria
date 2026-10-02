@@ -105,20 +105,58 @@ function createNeonSql(): Promise<Sql> {
   return globalRef.__pgSqlPromise__;
 }
 
+async function bundledPgliteOptions() {
+  const { useStorage } = await import("nitro/storage");
+  const storage = useStorage("assets:pglite");
+  const keys = await storage.getKeys();
+  const read = async (name: string) => {
+    const key = keys.find((item) => item === name || item.endsWith(`/${name}`));
+    if (!key) return null;
+    const value = await storage.getItemRaw(key);
+    if (!value) return null;
+    return value instanceof Uint8Array ? value : new Uint8Array(value as ArrayBuffer);
+  };
+  const copy = (bytes: Uint8Array) => {
+    const buffer = new ArrayBuffer(bytes.byteLength);
+    new Uint8Array(buffer).set(bytes);
+    return new Uint8Array(buffer);
+  };
+  const data = await read("pglite.data");
+  const wasm = await read("pglite.wasm");
+  const initdb = await read("initdb.wasm");
+  if (!data || !wasm || !initdb) return null;
+  const dataBytes = copy(data);
+  const wasmBytes = copy(wasm);
+  const initdbBytes = copy(initdb);
+  return {
+    fsBundle: new Blob([dataBytes]),
+    pgliteWasmModule: await WebAssembly.compile(wasmBytes),
+    initdbWasmModule: await WebAssembly.compile(initdbBytes),
+  };
+}
+
 async function createPgliteSql(): Promise<Sql> {
   // Embedded Postgres, imported on demand so it never loads on the Neon path.
   // One in-memory instance per process, shared across HMR module instances, so
   // data survives source edits (it resets on dev-server restart).
   globalRef.__pgliteInstance__ ??= (async () => {
     const { PGlite } = await import("@electric-sql/pglite");
-    const pg = new PGlite({
-      parsers: {
-        [OID_INT8]: Number,
-        [OID_DATE]: identity,
-        [OID_INTERVAL]: identity,
-      },
-    });
-    await pg.waitReady;
+    const parsers = {
+      [OID_INT8]: Number,
+      [OID_DATE]: identity,
+      [OID_INTERVAL]: identity,
+    };
+    const dataDir = process.env.VERCEL ? "/tmp/dm-gallery-pglite" : undefined;
+    let pg: import("@electric-sql/pglite").PGlite;
+    try {
+      pg = new PGlite({ dataDir, parsers });
+      await pg.waitReady;
+    } catch (error) {
+      const bundled = await bundledPgliteOptions().catch(() => null);
+      if (!bundled) throw error;
+      pg = new PGlite({ dataDir, parsers, ...bundled });
+      await pg.waitReady;
+    }
     await pg.exec(
       "create table if not exists _migrations (name text primary key, applied_at timestamptz not null default now())",
     );

@@ -1,5 +1,6 @@
-import { readdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
@@ -12,7 +13,23 @@ import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
 
-/** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
+const workspaceRoot = fileURLToPath(new URL(".", import.meta.url));
+
+function ensurePgliteAssets() {
+  const dest = join(workspaceRoot, "server/pglite-bin");
+  const src = join(workspaceRoot, "node_modules/@electric-sql/pglite/dist");
+  mkdirSync(dest, { recursive: true });
+  for (const name of ["pglite.data", "pglite.wasm", "initdb.wasm"]) {
+    const from = join(src, name);
+    const target = join(dest, name);
+    if (!existsSync(from)) continue;
+    if (!existsSync(target) || statSync(target).size !== statSync(from).size) {
+      copyFileSync(from, target);
+    }
+  }
+}
+
+ensurePgliteAssets();
 function hasGlobbedMigrations(root: string): boolean {
   try {
     return readdirSync(join(root, "migrations")).some(isMigrationFile);
@@ -175,6 +192,7 @@ export default defineConfig(({ command, isPreview }) => ({
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
+            serverAssets: [{ baseName: "pglite", dir: "./server/pglite-bin" }],
           }),
         ]
       : []),

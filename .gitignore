@@ -9,3 +9,4 @@ artifacts
 dist
 .output
 *.log
+server/pglite-bin
