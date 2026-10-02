@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+
+  --color-ink: #1c1612;
+  --color-cream: #f3eee6;
+  --color-paper: #faf7f2;
+  --color-foam: #fffdfb;
+  --color-oak: #8c5a3c;
+  --color-oak-deep: #6d432c;
+  --color-brass: #b08968;
+  --color-muted: #6e655c;
+  --color-line: #e4dcd0;
+
+  --radius-card: 1.25rem;
+  --aspect-photo: 3 / 2;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: var(--color-oak);
+    color: var(--color-foam);
+  }
+
+  summary {
+    cursor: pointer;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-oak);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  .tap {
+    transition:
+      scale 150ms ease-out,
+      background-color 200ms ease,
+      color 200ms ease,
+      border-color 200ms ease;
+  }
+
+  .tap:active {
+    scale: 0.96;
+  }
+
+  .btn {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    padding-inline: 1.25rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .btn-ink {
+    background: var(--color-ink);
+    color: var(--color-cream);
+  }
+
+  .btn-ink:hover {
+    background: var(--color-oak-deep);
+  }
+
+  .btn-line {
+    border: 1px solid var(--color-line);
+    background: transparent;
+    color: var(--color-ink);
+  }
+
+  .btn-line:hover {
+    border-color: var(--color-ink);
+  }
+
+  .btn-cream {
+    background: var(--color-cream);
+    color: var(--color-ink);
+  }
+
+  .btn-cream:hover {
+    background: var(--color-foam);
+  }
+
+  .field {
+    width: 100%;
+    min-height: 3rem;
+    border-radius: 0.9rem;
+    border: 1px solid var(--color-line);
+    background: var(--color-paper);
+    padding-inline: 1rem;
+    color: var(--color-ink);
+  }
+
+  .field:focus {
+    border-color: transparent;
+    outline: 2px solid var(--color-oak);
+    outline-offset: 1px;
+  }
+
+  .kicker {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-oak);
+  }
+}
+
+details .mark-open {
+  display: none;
+}
+
+details[open] .mark-closed {
+  display: none;
+}
+
+details[open] .mark-open {
+  display: inline;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.enter {
+  animation: rise 700ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.d1 { animation-delay: 90ms; }
+.d2 { animation-delay: 180ms; }
+.d3 { animation-delay: 280ms; }
+.d4 { animation-delay: 380ms; }
+
+dialog.lightbox {
+  width: min(68rem, calc(100% - 1.5rem));
+  max-height: calc(100dvh - 1.5rem);
+  margin: auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  overflow: visible;
+  color: var(--color-ink);
+}
+
+dialog.lightbox::backdrop {
+  background: rgb(28 22 18 / 0.86);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .enter {
+    animation: none;
+  }
+
+  .tap:active {
+    scale: 1;
+  }
+}

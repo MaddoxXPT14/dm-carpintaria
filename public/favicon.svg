@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="DM Carpintaria">
+  <rect width="32" height="32" rx="7" fill="#1C1612"/>
+  <polygon fill="#F3EEE6" points="5,8 13.5,13 18.5,13 27,8 27,24 18.5,19 13.5,19 5,24"/>
+  <polygon fill="#B08968" points="16,13.4 18.6,16 16,18.6 13.4,16"/>
+</svg>
