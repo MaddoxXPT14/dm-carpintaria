@@ -73,8 +73,8 @@ export function WorksManager({
   }
 
   return (
-    <div className="mt-8 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="grid content-start gap-3">
+    <div className="mt-8 flex flex-col gap-8 xl:flex-row xl:items-start">
+      <aside className="grid w-full shrink-0 content-start gap-3 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-7rem)] xl:w-80 xl:overflow-y-auto">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-muted">
             {visible} no site{projects.length - visible > 0 ? ` · ${projects.length - visible} ocultos` : ""}
@@ -131,7 +131,7 @@ export function WorksManager({
           })}
         </div>
       </aside>
-      <div>
+      <div className="min-w-0 w-full flex-1">
         {error ? <p className="mb-4 text-sm text-oak-deep">{error}</p> : null}
         {selected === "new" ? (
           <NewWork
@@ -342,10 +342,10 @@ function WorkEditor({
             onDragStart={(event) => event.dataTransfer.setData("text/plain", String(photo.id))}
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => dropPhoto(event, photo.id)}
-            className="grid grid-cols-[96px_minmax(0,1fr)] gap-3 rounded-card border border-line bg-foam p-3 sm:grid-cols-[140px_minmax(0,1fr)]"
+            className="flex gap-3 rounded-card border border-line bg-foam p-3"
           >
-            <img src={photo.src} alt={captions[photo.id] || photo.alt} className="aspect-[4/3] w-full rounded-card object-cover" />
-            <div className="grid content-start gap-2">
+            <img src={photo.src} alt={captions[photo.id] || photo.alt} className="aspect-[4/3] w-24 shrink-0 rounded-card object-cover sm:w-36" />
+            <div className="grid min-w-0 flex-1 content-start gap-2">
               <p className="text-xs uppercase tracking-widest text-muted">{index === 0 ? `1 · Capa` : String(index + 1)}</p>
               <input
                 value={captions[photo.id] ?? ""}
