@@ -229,7 +229,7 @@ function Editor({
 
   return (
     <main className="bg-paper">
-      <section className={`mx-auto w-full px-5 py-12 ${panel === "trabalhos" ? "max-w-6xl" : "max-w-3xl"}`}>
+      <section className="mx-auto w-full max-w-6xl px-5 py-12">
         <h1 className="font-display text-4xl text-ink">Trabalhos</h1>
         <p className="mt-2 text-sm text-muted">Esta página não aparece no site.</p>
         <div className="mt-6 flex gap-2">
@@ -318,23 +318,35 @@ function TextEditor({
   }
 
   const [menu, setMenu] = useState<(typeof menus)[number]["id"]>("inicio");
+  const [open, setOpen] = useState(0);
   const current = menus.find((item) => item.id === menu) ?? menus[0];
+  const stepIndex = Math.min(open, Math.max(draft.steps.length - 1, 0));
+  const serviceIndex = Math.min(open, Math.max(draft.services.length - 1, 0));
+  const faqIndex = Math.min(open, Math.max(draft.faqs.length - 1, 0));
+  const step = draft.steps[stepIndex];
+  const service = draft.services[serviceIndex];
+  const faq = draft.faqs[faqIndex];
+
+  function choose(id: (typeof menus)[number]["id"]) {
+    setMenu(id);
+    setOpen(0);
+  }
 
   return (
-    <form onSubmit={save} className="mt-8 grid gap-6">
-      <div className="flex flex-wrap gap-2">
+    <form onSubmit={save} className="mt-8 lg:flex lg:items-start lg:gap-8">
+      <nav className="grid content-start gap-2 lg:sticky lg:top-24 lg:w-52 lg:shrink-0">
         {menus.map((item) => (
           <button
             key={item.id}
             type="button"
-            className={`tap btn ${menu === item.id ? "btn-ink" : "btn-line"}`}
-            onClick={() => setMenu(item.id)}
+            className={`tap rounded-card border px-3 py-2 text-left text-sm ${menu === item.id ? "border-ink bg-ink text-cream" : "border-line bg-cream"}`}
+            onClick={() => choose(item.id)}
           >
             {item.label}
           </button>
         ))}
-      </div>
-      <section className="grid gap-4">
+      </nav>
+      <section className="mt-6 grid min-w-0 flex-1 gap-4 lg:mt-0">
         <div>
           <h2 className="font-display text-3xl">{current.label}</h2>
           <p className="mt-1 text-sm text-muted">{current.hint}</p>
@@ -359,16 +371,17 @@ function TextEditor({
             <Field label="Missão" value={draft.mission} onChange={(value) => set("mission", value)} area />
             <Field label="Visão" value={draft.vision} onChange={(value) => set("vision", value)} area />
             <Field label="Valores" value={draft.values} onChange={(value) => set("values", value)} area />
-            {draft.steps.map((step, index) => (
-              <fieldset key={step.n} className="grid gap-2 rounded-card border border-line bg-foam p-4">
-                <legend className="px-1 text-sm text-muted">Passo {index + 1}</legend>
+            <OneOf labels={draft.steps.map((item, index) => item.title || `Passo ${index + 1}`)} index={open} onPick={setOpen} />
+            {step ? (
+              <fieldset className="grid gap-2 rounded-card border border-line bg-foam p-4">
+                <legend className="px-1 text-sm text-muted">Passo {Math.min(open, draft.steps.length - 1) + 1}</legend>
                 <Field
                   label="Título"
                   value={step.title}
                   onChange={(value) =>
                     set(
                       "steps",
-                      draft.steps.map((item, itemIndex) => (itemIndex === index ? { ...item, title: value } : item)),
+                      draft.steps.map((item, itemIndex) => (itemIndex === open ? { ...item, title: value } : item)),
                     )
                   }
                 />
@@ -379,12 +392,12 @@ function TextEditor({
                   onChange={(value) =>
                     set(
                       "steps",
-                      draft.steps.map((item, itemIndex) => (itemIndex === index ? { ...item, text: value } : item)),
+                      draft.steps.map((item, itemIndex) => (itemIndex === open ? { ...item, text: value } : item)),
                     )
                   }
                 />
               </fieldset>
-            ))}
+            ) : null}
           </>
         ) : null}
         {menu === "servicos" ? (
@@ -392,16 +405,17 @@ function TextEditor({
             <Field label="Pequeno texto por cima" value={draft.servicesKicker} onChange={(value) => set("servicesKicker", value)} />
             <Field label="Título" value={draft.servicesTitle} onChange={(value) => set("servicesTitle", value)} />
             <Field label="Introdução" value={draft.servicesIntro} onChange={(value) => set("servicesIntro", value)} area />
-            {draft.services.map((service, index) => (
-              <fieldset key={index} className="grid gap-2 rounded-card border border-line bg-foam p-4">
-                <legend className="px-1 text-sm text-muted">Serviço {index + 1}</legend>
+            <OneOf labels={draft.services.map((item, index) => item.title || `Serviço ${index + 1}`)} index={open} onPick={setOpen} />
+            {service ? (
+              <fieldset className="grid gap-2 rounded-card border border-line bg-foam p-4">
+                <legend className="px-1 text-sm text-muted">Serviço {Math.min(open, draft.services.length - 1) + 1}</legend>
                 <Field
                   label="Nome"
                   value={service.title}
                   onChange={(value) =>
                     set(
                       "services",
-                      draft.services.map((item, itemIndex) => (itemIndex === index ? { ...item, title: value } : item)),
+                      draft.services.map((item, itemIndex) => (itemIndex === open ? { ...item, title: value } : item)),
                     )
                   }
                 />
@@ -412,7 +426,7 @@ function TextEditor({
                   onChange={(value) =>
                     set(
                       "services",
-                      draft.services.map((item, itemIndex) => (itemIndex === index ? { ...item, summary: value } : item)),
+                      draft.services.map((item, itemIndex) => (itemIndex === open ? { ...item, summary: value } : item)),
                     )
                   }
                 />
@@ -422,12 +436,12 @@ function TextEditor({
                   onChange={(value) =>
                     set(
                       "services",
-                      draft.services.map((item, itemIndex) => (itemIndex === index ? { ...item, benefits: value } : item)),
+                      draft.services.map((item, itemIndex) => (itemIndex === open ? { ...item, benefits: value } : item)),
                     )
                   }
                 />
               </fieldset>
-            ))}
+            ) : null}
           </>
         ) : null}
         {menu === "galeria" ? (
@@ -456,32 +470,33 @@ function TextEditor({
             <Field label="Pequeno texto por cima" value={draft.faqKicker} onChange={(value) => set("faqKicker", value)} />
             <Field label="Título" value={draft.faqTitle} onChange={(value) => set("faqTitle", value)} />
             <Field label="Introdução" value={draft.faqIntro} onChange={(value) => set("faqIntro", value)} area />
-            {draft.faqs.map((item, index) => (
-              <fieldset key={index} className="grid gap-2 rounded-card border border-line bg-foam p-4">
-                <legend className="px-1 text-sm text-muted">Pergunta {index + 1}</legend>
+            <OneOf labels={draft.faqs.map((item, index) => item.q || `Pergunta ${index + 1}`)} index={open} onPick={setOpen} />
+            {faq ? (
+              <fieldset className="grid gap-2 rounded-card border border-line bg-foam p-4">
+                <legend className="px-1 text-sm text-muted">Pergunta {Math.min(open, draft.faqs.length - 1) + 1}</legend>
                 <Field
                   label="Pergunta"
-                  value={item.q}
+                  value={faq.q}
                   onChange={(value) =>
                     set(
                       "faqs",
-                      draft.faqs.map((faq, faqIndex) => (faqIndex === index ? { ...faq, q: value } : faq)),
+                      draft.faqs.map((item, itemIndex) => (itemIndex === open ? { ...item, q: value } : item)),
                     )
                   }
                 />
                 <Field
                   label="Resposta"
-                  value={item.a}
+                  value={faq.a}
                   area
                   onChange={(value) =>
                     set(
                       "faqs",
-                      draft.faqs.map((faq, faqIndex) => (faqIndex === index ? { ...faq, a: value } : faq)),
+                      draft.faqs.map((item, itemIndex) => (itemIndex === open ? { ...item, a: value } : item)),
                     )
                   }
                 />
               </fieldset>
-            ))}
+            ) : null}
           </>
         ) : null}
         {menu === "contactos" ? (
@@ -497,10 +512,10 @@ function TextEditor({
             <Field label="Texto do rodapé" value={draft.footerText} onChange={(value) => set("footerText", value)} area />
           </>
         ) : null}
+        <button type="submit" className="tap btn btn-ink w-fit" disabled={busy}>
+          {busy ? "A guardar…" : "Guardar este menu"}
+        </button>
       </section>
-      <button type="submit" className="tap btn btn-ink w-fit" disabled={busy}>
-        {busy ? "A guardar…" : "Guardar este menu"}
-      </button>
     </form>
   );
 }
@@ -515,16 +530,26 @@ const menus = [
   { id: "contactos", label: "Contactos", hint: "Telefone, email, morada e redes." },
 ] as const;
 
+function OneOf({ labels, index, onPick }: { labels: string[]; index: number; onPick: (index: number) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {labels.map((label, itemIndex) => (
+        <button
+          key={itemIndex}
+          type="button"
+          className={`tap max-w-64 truncate rounded-full border px-3 py-2 text-left text-sm ${itemIndex === index ? "border-ink bg-ink text-cream" : "border-line bg-cream"}`}
+          onClick={() => onPick(itemIndex)}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Lines({ label, value, onChange }: { label: string; value: string[]; onChange: (value: string[]) => void }) {
   const text = value.join("\n");
-  return (
-    <Field
-      label={label}
-      value={text}
-      area
-      onChange={(next) => onChange(next.split("\n"))}
-    />
-  );
+  return <Field label={label} value={text} area onChange={(next) => onChange(next.split("\n"))} />;
 }
 
 function Field({
