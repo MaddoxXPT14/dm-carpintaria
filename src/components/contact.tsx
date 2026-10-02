@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { site, whatsappHref } from "@/lib/site";
 import { telHref, waNumber } from "@/lib/content";
@@ -14,7 +14,7 @@ export function Contact() {
   const { copy } = useSiteContent();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Errors>({});
-  const [sent, setSent] = useState("");
+  const [sent, setSent] = useState<{ href: string; channel: Channel } | null>(null);
 
   function update(field: keyof typeof initial, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -37,12 +37,8 @@ export function Contact() {
     return next;
   }
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const next = validate();
-    setErrors(next);
-    if (Object.keys(next).length > 0) return;
-    const text = [
+  function requestText() {
+    return [
       "Olá, DM Carpintaria. Venho pelo site pedir um orçamento.",
       `Nome: ${values.nome.trim()}`,
       `Telefone: ${values.telefone.trim()}`,
@@ -50,9 +46,34 @@ export function Contact() {
       `Serviço: ${values.servico}`,
       `Mensagem: ${values.mensagem.trim()}`,
     ].join("\n");
-    const href = whatsappHref(text, waNumber(copy.phone));
+  }
+
+  async function send(channel: Channel) {
+    const next = validate();
+    setErrors(next);
+    if (Object.keys(next).length > 0) return;
+    const text = requestText();
     trackLead();
-    setSent(href);
+    if (channel === "whatsapp") {
+      const href = whatsappHref(text, waNumber(copy.phone));
+      setSent({ href, channel });
+      const opened = window.open(href, "_blank", "noopener,noreferrer");
+      if (!opened) window.location.href = href;
+      return;
+    }
+    if (channel === "email") {
+      const href = `mailto:${copy.email}?subject=${encodeURIComponent("Pedido de orçamento — DM Carpintaria")}&body=${encodeURIComponent(text)}`;
+      setSent({ href, channel });
+      window.location.href = href;
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // The Facebook window still opens; the visitor can copy from the confirmation.
+    }
+    const href = messengerHref(copy.facebook || site.facebook);
+    setSent({ href, channel });
     const opened = window.open(href, "_blank", "noopener,noreferrer");
     if (!opened) window.location.href = href;
   }
@@ -157,22 +178,21 @@ export function Contact() {
         <div className="rounded-card border border-line bg-foam p-5 md:p-8 lg:col-span-7">
           {sent ? (
             <div className="flex h-full min-h-80 flex-col justify-center">
-              <p className="kicker">Pedido enviado</p>
-              <h3 className="mt-3 font-display text-4xl">A conversa está aberta no WhatsApp.</h3>
-              <p className="mt-3 max-w-md text-muted">
-                Se a janela não apareceu, use o botão. Respondemos com a disponibilidade para visitar
-                ou orçamentar.
-              </p>
+              <p className="kicker">Pedido pronto</p>
+              <h3 className="mt-3 font-display text-4xl">{sentCopy[sent.channel].title}</h3>
+              <p className="mt-3 max-w-md text-muted">{sentCopy[sent.channel].text}</p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <a href={sent} target="_blank" rel="noreferrer" className="tap btn btn-ink">
-                  <WhatsAppIcon className="size-4" />
-                  Abrir WhatsApp
+                <a href={sent.href} target="_blank" rel="noreferrer" className="tap btn btn-ink">
+                  {sent.channel === "email" ? <Mail className="size-4" /> : null}
+                  {sent.channel === "whatsapp" ? <WhatsAppIcon className="size-4" /> : null}
+                  {sent.channel === "facebook" ? <FacebookIcon className="size-4" /> : null}
+                  {sentCopy[sent.channel].action}
                 </a>
                 <button
                   type="button"
                   className="tap btn btn-line"
                   onClick={() => {
-                    setSent("");
+                    setSent(null);
                     setValues(initial);
                   }}
                 >
@@ -181,9 +201,15 @@ export function Contact() {
               </div>
             </div>
           ) : (
-            <form onSubmit={submit} noValidate>
+            <form
+              noValidate
+              onSubmit={(event) => {
+                event.preventDefault();
+                void send("whatsapp");
+              }}
+            >
               <h3 className="font-display text-3xl">Pedir orçamento</h3>
-              <p className="mt-2 text-sm text-muted">Campos com asterisco são obrigatórios.</p>
+              <p className="mt-2 text-sm text-muted">Campos com asterisco são obrigatórios. Escolha como quer enviar.</p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <Field
                   id="nome"
@@ -264,9 +290,18 @@ export function Contact() {
                   Falta corrigir os campos assinalados.
                 </p>
               ) : null}
-              <div className="mt-6 max-w-64">
-                <button type="submit" className="tap btn btn-ink w-full">
-                  Pedir no WhatsApp
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button type="submit" className="tap btn btn-ink">
+                  <WhatsAppIcon className="size-4" />
+                  WhatsApp
+                </button>
+                <button type="button" className="tap btn btn-line" onClick={() => void send("email")}>
+                  <Mail className="size-4" />
+                  Email
+                </button>
+                <button type="button" className="tap btn btn-line" onClick={() => void send("facebook")}>
+                  <FacebookIcon className="size-4" />
+                  Facebook
                 </button>
               </div>
             </form>
@@ -275,6 +310,36 @@ export function Contact() {
       </div>
     </section>
   );
+}
+
+type Channel = "whatsapp" | "email" | "facebook";
+
+const sentCopy: Record<Channel, { title: string; text: string; action: string }> = {
+  whatsapp: {
+    title: "A conversa está aberta no WhatsApp.",
+    text: "Se a janela não apareceu, use o botão. Respondemos com a disponibilidade para visitar ou orçamentar.",
+    action: "Abrir WhatsApp",
+  },
+  email: {
+    title: "O email está pronto a enviar.",
+    text: "Abriu-se o programa de correio com o pedido. Confirme e envie. Se não abriu, use o botão.",
+    action: "Abrir email",
+  },
+  facebook: {
+    title: "A mensagem foi copiada.",
+    text: "O Facebook não aceita o texto automaticamente. Na conversa, cole a mensagem e envie.",
+    action: "Abrir Facebook",
+  },
+};
+
+function messengerHref(facebook: string) {
+  try {
+    const id = new URL(facebook).searchParams.get("id");
+    if (id) return `https://m.me/${id}`;
+  } catch {
+    return facebook;
+  }
+  return facebook;
 }
 
 function Field({
