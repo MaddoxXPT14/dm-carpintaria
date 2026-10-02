@@ -17,6 +17,14 @@ const backupKey = "dm-carpintaria-conteudo";
 
 type Backup = { savedAt: number; copy: SiteCopy; projects: GalleryProject[] };
 
+function projectsOf(value: unknown): GalleryProject[] {
+  if (Array.isArray(value)) return value as GalleryProject[];
+  if (value && typeof value === "object" && Array.isArray((value as { projects?: unknown }).projects)) {
+    return (value as { projects: GalleryProject[] }).projects;
+  }
+  return [];
+}
+
 function readBackup(): Backup | null {
   try {
     const raw = localStorage.getItem(backupKey);
@@ -51,13 +59,18 @@ export function WorksManager({
   const [busy, setBusy] = useState(false);
 
   async function refresh(keep?: number | "new" | null) {
-    let snapshot = await listManagedGallery({ data: { password } });
+    const raw = await listManagedGallery({ data: { password } });
+    let savedAt = raw && typeof raw === "object" && "savedAt" in raw ? Number(raw.savedAt) || 0 : 0;
+    let copy = raw && typeof raw === "object" && "copy" in raw ? raw.copy : undefined;
+    let next = projectsOf(raw);
     const backup = readBackup();
-    if (backup && backup.savedAt > snapshot.savedAt && backup.projects.length > 0) {
-      snapshot = await restoreManagedContent({ data: { password, ...backup } });
+    if (backup && copy && backup.savedAt > savedAt && backup.projects.length > 0) {
+      const restored = await restoreManagedContent({ data: { password, ...backup } });
+      savedAt = Number(restored.savedAt) || savedAt;
+      copy = restored.copy;
+      next = projectsOf(restored);
     }
-    writeBackup(snapshot);
-    const next = snapshot.projects;
+    if (copy) writeBackup({ savedAt, copy, projects: next });
     setProjects(next);
     setSelected((current) => {
       const choice = keep === undefined ? current : keep;
@@ -74,12 +87,13 @@ export function WorksManager({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [password]);
 
-  const visible = projects.filter((project) => !project.hidden).length;
-  const filtered = projects.filter((project) => {
+  const list = Array.isArray(projects) ? projects : [];
+  const visible = list.filter((project) => !project.hidden).length;
+  const filtered = list.filter((project) => {
     const haystack = `${project.title} ${project.tag} ${project.body}`.toLocaleLowerCase("pt");
     return haystack.includes(query.trim().toLocaleLowerCase("pt"));
   });
-  const current = typeof selected === "number" ? projects.find((project) => project.id === selected) : null;
+  const current = typeof selected === "number" ? list.find((project) => project.id === selected) : null;
 
   async function run(action: () => Promise<{ published?: boolean; ok?: boolean } | void>, keep?: number | "new" | null) {
     setBusy(true);
@@ -96,12 +110,12 @@ export function WorksManager({
   }
 
   async function moveProject(id: number, direction: number) {
-    const index = projects.findIndex((project) => project.id === id);
-    const next = index + direction;
-    if (index < 0 || next < 0 || next >= projects.length) return;
-    const ids = projects.map((project) => project.id);
+    const index = list.findIndex((project) => project.id === id);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= list.length) return;
+    const ids = list.map((project) => project.id);
     const [item] = ids.splice(index, 1);
-    ids.splice(next, 0, item);
+    ids.splice(nextIndex, 0, item);
     await run(() => arrangeGallery({ data: { password, ids } }), id);
   }
 
@@ -112,7 +126,7 @@ export function WorksManager({
         <div className="grid gap-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-muted">
-              {visible} no site{projects.length - visible > 0 ? ` · ${projects.length - visible} ocultos` : ""}
+              {visible} no site{list.length - visible > 0 ? ` · ${list.length - visible} ocultos` : ""}
             </p>
             <button type="button" className="tap btn btn-ink" onClick={() => setSelected("new")}>
               Novo
@@ -127,7 +141,7 @@ export function WorksManager({
           <div className="grid gap-2">
             {filtered.map((project) => {
               const cover = project.photos[0];
-              const index = projects.findIndex((item) => item.id === project.id);
+              const index = list.findIndex((item) => item.id === project.id);
               return (
                 <div
                   key={project.id}
@@ -149,7 +163,7 @@ export function WorksManager({
                   </button>
                   <div className="flex shrink-0 flex-col">
                     <button type="button" className="tap px-1 text-xs" disabled={busy || index === 0} onClick={() => moveProject(project.id, -1)} aria-label="Subir">↑</button>
-                    <button type="button" className="tap px-1 text-xs" disabled={busy || index === projects.length - 1} onClick={() => moveProject(project.id, 1)} aria-label="Descer">↓</button>
+                    <button type="button" className="tap px-1 text-xs" disabled={busy || index === list.length - 1} onClick={() => moveProject(project.id, 1)} aria-label="Descer">↓</button>
                   </div>
                 </div>
               );
