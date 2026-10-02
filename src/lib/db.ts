@@ -94,6 +94,7 @@ function createNeonSql(): Promise<Sql> {
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
     const pool = new Pool({ connectionString: databaseUrl });
+    await applyNeonMigrations(pool);
     return toSql(async <T>(text: string, params: unknown[]) => {
       const res = await pool.query(text, params);
       return res.rows as T[];
@@ -103,6 +104,34 @@ function createNeonSql(): Promise<Sql> {
     throw err;
   });
   return globalRef.__pgSqlPromise__;
+}
+
+async function applyNeonMigrations(pool: import("pg").Pool) {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      "create table if not exists _migrations (name text primary key, applied_at timestamptz not null default now())",
+    );
+    const migrations = import.meta.glob("/migrations/*.sql", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
+    const applied = (await client.query<{ name: string }>("select name from _migrations")).rows.map((row) => row.name);
+    for (const { name, path } of pendingMigrations(Object.keys(migrations), applied)) {
+      try {
+        await client.query("begin");
+        await client.query(migrations[path]);
+        await client.query("insert into _migrations (name) values ($1)", [name]);
+        await client.query("commit");
+      } catch (error) {
+        await client.query("rollback").catch(() => undefined);
+        throw error;
+      }
+    }
+  } finally {
+    client.release();
+  }
 }
 
 async function bundledPgliteOptions() {

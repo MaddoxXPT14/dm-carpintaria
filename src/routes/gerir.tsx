@@ -119,7 +119,7 @@ function Editor({
 
   function saved(published: boolean) {
     clearContentCache();
-    setNotice(published ? "Guardado. O site público atualiza dentro de um minuto." : "Guardado.");
+    setNotice("Guardado.");
   }
 
   async function add(event: FormEvent<HTMLFormElement>) {
