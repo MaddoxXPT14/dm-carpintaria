@@ -157,7 +157,7 @@ export function WorksManager({
                       <span className="block truncate font-medium" title={project.title}>{project.title}</span>
                       <span className="block truncate text-xs text-muted">
                         {project.hidden ? "Oculto · " : ""}
-                        {project.tag || "Sem divisão"} · {project.photos.length}
+                        {project.tag || "Sem categoria"} · {project.photos.length}
                       </span>
                     </span>
                   </button>
@@ -251,7 +251,7 @@ function NewWork({
     <form onSubmit={submit} className="grid gap-4 rounded-card border border-line bg-foam p-5">
       <h2 className="font-display text-2xl">Novo trabalho</h2>
       <input name="title" required minLength={2} placeholder="Nome" className="h-12 rounded-card border border-line bg-cream px-3" />
-      <input name="tag" placeholder="Sala, cozinha, quarto…" className="h-12 rounded-card border border-line bg-cream px-3" />
+      <input name="tag" placeholder="Categoria: sala, cozinha, quarto…" className="h-12 rounded-card border border-line bg-cream px-3" />
       <textarea name="body" rows={4} placeholder="Texto que aparece por baixo das fotos" className="rounded-card border border-line bg-cream px-3 py-2" />
       <input name="photos" type="file" accept="image/*" multiple required className="text-sm" />
       <div className="flex flex-wrap gap-2">
@@ -371,7 +371,7 @@ function WorkEditor({
         }}
       >
         <input value={title} onChange={(event) => setTitle(event.target.value)} required minLength={2} className="h-12 rounded-card border border-line bg-cream px-3" />
-        <input value={tag} onChange={(event) => setTag(event.target.value)} placeholder="Divisão" className="h-12 rounded-card border border-line bg-cream px-3" />
+        <input value={tag} onChange={(event) => setTag(event.target.value)} placeholder="Categoria" className="h-12 rounded-card border border-line bg-cream px-3" />
         <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={4} className="rounded-card border border-line bg-cream px-3 py-2" />
         <button type="submit" className="tap btn btn-ink w-fit" disabled={busy}>
           {busy ? "A guardar…" : "Guardar texto e legendas"}
