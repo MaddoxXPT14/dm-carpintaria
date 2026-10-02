@@ -269,8 +269,8 @@ export const faqs = [
   },
 ];
 
-export function whatsappHref(text: string) {
-  return `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(text)}`;
+export function whatsappHref(text: string, number = site.whatsapp) {
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
 }
 
 export const jsonLd = {

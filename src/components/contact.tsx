@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Mail, MapPin, Phone } from "lucide-react";
-import { services, site, whatsappHref } from "@/lib/site";
+import { site, whatsappHref } from "@/lib/site";
+import { telHref, waNumber } from "@/lib/content";
+import { useSiteContent } from "@/lib/use-content";
 import { trackLead } from "@/components/analytics";
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from "@/components/icons";
 
@@ -9,6 +11,7 @@ type Errors = Partial<Record<"nome" | "telefone" | "email" | "servico" | "mensag
 const initial = { nome: "", telefone: "", email: "", servico: "", mensagem: "" };
 
 export function Contact() {
+  const { copy } = useSiteContent();
   const [values, setValues] = useState(initial);
   const [errors, setErrors] = useState<Errors>({});
   const [sent, setSent] = useState("");
@@ -47,52 +50,47 @@ export function Contact() {
       `Serviço: ${values.servico}`,
       `Mensagem: ${values.mensagem.trim()}`,
     ].join("\n");
-    const href = whatsappHref(text);
+    const href = whatsappHref(text, waNumber(copy.phone));
     trackLead();
     setSent(href);
     const opened = window.open(href, "_blank", "noopener,noreferrer");
     if (!opened) window.location.href = href;
   }
 
-  const mapsHref = site.address
-    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`
+  const mapsHref = copy.address
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(copy.address)}`
     : "https://www.google.com/maps/search/?api=1&query=DM%20Carpintaria";
 
   return (
     <section id="contactos" className="scroll-mt-20 bg-cream py-20 md:py-28">
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 md:px-8 lg:grid-cols-12">
         <div className="lg:col-span-5">
-          <p className="kicker">Contactos</p>
-          <h2 className="mt-3 font-display text-4xl leading-tight md:text-5xl">
-            Conte-nos a divisão. Nós tratamos da madeira.
-          </h2>
-          <p className="mt-4 text-muted">
-            O pedido abre uma conversa no WhatsApp, para respondermos no mesmo sítio onde já falamos
-            com clientes. Não guardamos os dados neste site.
-          </p>
+          <p className="kicker">{copy.contactKicker}</p>
+          <h2 className="mt-3 font-display text-4xl leading-tight md:text-5xl">{copy.contactTitle}</h2>
+          <p className="mt-4 text-muted">{copy.contactText}</p>
 
           <ul className="mt-8 space-y-3">
             <li>
-              <a href={`tel:${site.phoneTel}`} className="flex items-center gap-3 hover:text-oak-deep">
+              <a href={`tel:${telHref(copy.phone)}`} className="flex items-center gap-3 hover:text-oak-deep">
                 <Phone className="size-5 text-oak" aria-hidden="true" />
                 <span>
                   <span className="block text-xs uppercase tracking-widest text-muted">Ligar agora</span>
-                  {site.phoneDisplay}
+                  {copy.phone}
                 </span>
               </a>
             </li>
             <li>
-              <a href={`mailto:${site.email}`} className="flex items-center gap-3 hover:text-oak-deep">
+              <a href={`mailto:${copy.email}`} className="flex items-center gap-3 hover:text-oak-deep">
                 <Mail className="size-5 text-oak" aria-hidden="true" />
                 <span>
                   <span className="block text-xs uppercase tracking-widest text-muted">Email</span>
-                  {site.email}
+                  {copy.email}
                 </span>
               </a>
             </li>
             <li>
               <a
-                href={whatsappHref("Olá, DM Carpintaria. Gostava de pedir um orçamento.")}
+                href={whatsappHref("Olá, DM Carpintaria. Gostava de pedir um orçamento.", waNumber(copy.phone))}
                 className="flex items-center gap-3 hover:text-oak-deep"
                 target="_blank"
                 rel="noreferrer"
@@ -100,17 +98,17 @@ export function Contact() {
                 <WhatsAppIcon className="size-5 text-oak" />
                 <span>
                   <span className="block text-xs uppercase tracking-widest text-muted">WhatsApp</span>
-                  {site.phoneDisplay}
+                  {copy.phone}
                 </span>
               </a>
             </li>
           </ul>
 
           <div className="mt-8 overflow-hidden rounded-card border border-line bg-paper">
-            {site.address ? (
+            {copy.address ? (
               <iframe
                 title="Mapa da DM Carpintaria"
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(site.address)}&z=15&output=embed`}
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(copy.address)}&z=15&output=embed`}
                 className="h-56 w-full border-0"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
@@ -126,7 +124,7 @@ export function Contact() {
             )}
             <div className="flex flex-wrap items-center justify-between gap-3 p-4">
               <p className="text-sm text-muted">
-                {site.address || "Portugal · deslocação ao local"}
+                {copy.address || "Portugal · deslocação ao local"}
               </p>
               <a href={mapsHref} target="_blank" rel="noreferrer" className="text-sm font-medium text-oak-deep">
                 Abrir no Google Maps
@@ -136,7 +134,7 @@ export function Contact() {
 
           <div className="mt-5 flex gap-2">
             <a
-              href={site.facebook}
+              href={copy.facebook || site.facebook}
               target="_blank"
               rel="noreferrer"
               className="tap flex size-12 items-center justify-center rounded-full border border-line hover:border-ink"
@@ -144,9 +142,9 @@ export function Contact() {
             >
               <FacebookIcon className="size-5" />
             </a>
-            {site.instagram ? (
+            {copy.instagram ? (
               <a
-                href={site.instagram}
+                href={copy.instagram}
                 target="_blank"
                 rel="noreferrer"
                 className="tap flex size-12 items-center justify-center rounded-full border border-line hover:border-ink"
@@ -229,7 +227,7 @@ export function Contact() {
                     onChange={(event) => update("servico", event.target.value)}
                   >
                     <option value="">Escolher</option>
-                    {services.map((service) => (
+                    {copy.services.map((service) => (
                       <option key={service.title} value={service.title}>
                         {service.title}
                       </option>

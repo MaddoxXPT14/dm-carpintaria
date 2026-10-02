@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { Menu, Phone, X } from "lucide-react";
-import { nav, site } from "@/lib/site";
+import { nav } from "@/lib/site";
+import { telHref } from "@/lib/content";
+import { useSiteContent } from "@/lib/use-content";
 import { cn } from "@/lib/cn";
 
 export function Header() {
   const [open, setOpen] = useState(false);
+  const { copy } = useSiteContent();
+  const tel = telHref(copy.phone);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -31,18 +35,18 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           <a
-            href={`tel:${site.phoneTel}`}
+            href={`tel:${tel}`}
             className="tap btn btn-line hidden sm:inline-flex"
-            aria-label={`Ligar agora para ${site.phoneDisplay}`}
+            aria-label={`Ligar agora para ${copy.phone}`}
           >
             <Phone className="size-4" aria-hidden="true" />
             Ligar agora
           </a>
-          <a href={`tel:${site.phoneTel}`} className="tap btn btn-line size-12 px-0 sm:hidden" aria-label="Ligar agora">
+          <a href={`tel:${tel}`} className="tap btn btn-line size-12 px-0 sm:hidden" aria-label="Ligar agora">
             <Phone className="size-5" aria-hidden="true" />
           </a>
           <a href="/#contactos" className="tap btn btn-ink hidden md:inline-flex">
-            Pedir orçamento
+            {copy.heroPrimary}
           </a>
           <button
             type="button"
@@ -76,7 +80,7 @@ export function Header() {
             </a>
           ))}
           <a href="/#contactos" className="tap btn btn-ink mt-4" onClick={() => setOpen(false)}>
-            Pedir orçamento
+            {copy.heroPrimary}
           </a>
         </nav>
       </div>
