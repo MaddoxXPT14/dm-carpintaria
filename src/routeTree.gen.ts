@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as GerirRouteImport } from './routes/gerir'
+import { Route as TrabalhosRouteImport } from './routes/trabalhos'
+import { Route as ApiGalleryIdRouteImport } from './routes/api/gallery/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GerirRoute = GerirRouteImport.update({
+  id: '/gerir',
+  path: '/gerir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrabalhosRoute = TrabalhosRouteImport.update({
+  id: '/trabalhos',
+  path: '/trabalhos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGalleryIdRoute = ApiGalleryIdRouteImport.update({
+  id: '/api/gallery/$id',
+  path: '/api/gallery/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/gerir': typeof GerirRoute
+  '/trabalhos': typeof TrabalhosRoute
+  '/api/gallery/$id': typeof ApiGalleryIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/gerir': typeof GerirRoute
+  '/trabalhos': typeof TrabalhosRoute
+  '/api/gallery/$id': typeof ApiGalleryIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/gerir': typeof GerirRoute
+  '/trabalhos': typeof TrabalhosRoute
+  '/api/gallery/$id': typeof ApiGalleryIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/gerir' | '/trabalhos' | '/api/gallery/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/gerir' | '/trabalhos' | '/api/gallery/$id'
+  id: '__root__' | '/' | '/gerir' | '/trabalhos' | '/api/gallery/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  GerirRoute: typeof GerirRoute
+  TrabalhosRoute: typeof TrabalhosRoute
+  ApiGalleryIdRoute: typeof ApiGalleryIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/gerir': {
+      id: '/gerir'
+      path: '/gerir'
+      fullPath: '/gerir'
+      preLoaderRoute: typeof GerirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trabalhos': {
+      id: '/trabalhos'
+      path: '/trabalhos'
+      fullPath: '/trabalhos'
+      preLoaderRoute: typeof TrabalhosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gallery/$id': {
+      id: '/api/gallery/$id'
+      path: '/api/gallery/$id'
+      fullPath: '/api/gallery/$id'
+      preLoaderRoute: typeof ApiGalleryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  GerirRoute: GerirRoute,
+  TrabalhosRoute: TrabalhosRoute,
+  ApiGalleryIdRoute: ApiGalleryIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

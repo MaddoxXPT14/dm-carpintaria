@@ -16,7 +16,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-cream/95 backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-5 md:h-18 md:px-8">
-        <a href="#topo" className="flex items-baseline gap-2" onClick={() => setOpen(false)}>
+        <a href="/" className="flex items-baseline gap-2" onClick={() => setOpen(false)}>
           <span className="font-display text-2xl leading-none tracking-tight">DM</span>
           <span className="text-xs font-medium uppercase tracking-widest text-muted">Carpintaria</span>
         </a>
@@ -41,7 +41,7 @@ export function Header() {
           <a href={`tel:${site.phoneTel}`} className="tap btn btn-line size-12 px-0 sm:hidden" aria-label="Ligar agora">
             <Phone className="size-5" aria-hidden="true" />
           </a>
-          <a href="#contactos" className="tap btn btn-ink hidden md:inline-flex">
+          <a href="/#contactos" className="tap btn btn-ink hidden md:inline-flex">
             Pedir orçamento
           </a>
           <button
@@ -75,7 +75,7 @@ export function Header() {
               {item.label}
             </a>
           ))}
-          <a href="#contactos" className="tap btn btn-ink mt-4" onClick={() => setOpen(false)}>
+          <a href="/#contactos" className="tap btn btn-ink mt-4" onClick={() => setOpen(false)}>
             Pedir orçamento
           </a>
         </nav>

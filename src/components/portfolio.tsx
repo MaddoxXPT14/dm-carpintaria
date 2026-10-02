@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { site, works } from "@/lib/site";
+import type { GalleryProject } from "@/lib/gallery";
 
-export function Portfolio() {
+export function Portfolio({ projects }: { projects: GalleryProject[] }) {
   const [open, setOpen] = useState<{ work: number; photo: number } | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -13,38 +13,35 @@ export function Portfolio() {
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
-  const work = open ? works[open.work] : null;
-  const photo = work && open ? work.images[open.photo] : null;
+  const work = open ? projects[open.work] : null;
+  const photo = work && open ? work.photos[open.photo] : null;
 
   function step(direction: number) {
     setOpen((current) => {
       if (!current) return current;
-      const images = works[current.work].images;
-      const photo = (current.photo + direction + images.length) % images.length;
-      return { ...current, photo };
+      const photos = projects[current.work]?.photos ?? [];
+      if (photos.length === 0) return current;
+      const photoIndex = (current.photo + direction + photos.length) % photos.length;
+      return { ...current, photo: photoIndex };
     });
   }
 
-  return (
-    <section id="trabalhos" className="scroll-mt-20 bg-paper py-20 md:py-28">
-      <div className="mx-auto w-full max-w-6xl px-5 md:px-8">
-        <div className="max-w-2xl">
-          <p className="kicker">Trabalhos</p>
-          <h2 className="mt-3 font-display text-4xl leading-tight text-ink md:text-5xl">
-            Trabalho já feito.
-          </h2>
-          <p className="mt-4 max-w-xl text-muted">
-            Cada publicação fica na sua ficha. As fotos de um trabalho não se misturam com as do seguinte.
-          </p>
-        </div>
+  if (projects.length === 0) {
+    return (
+      <p className="mt-10 text-muted">Ainda não há trabalhos publicados.</p>
+    );
+  }
 
-        <div className="mt-12 flex flex-col gap-10">
-          {works.map((item, workIndex) => (
-            <article key={item.title} className="overflow-hidden rounded-card border border-line bg-foam">
+  return (
+    <>
+      <div className="mt-12 flex flex-col gap-10">
+        {projects.map((item, workIndex) => (
+          <article key={item.id} className="overflow-hidden rounded-card border border-line bg-foam">
+            {item.photos.length > 0 ? (
               <div className="grid grid-cols-2 gap-1 bg-line p-1 md:grid-cols-3">
-                {item.images.map((image, photoIndex) => (
+                {item.photos.map((image, photoIndex) => (
                   <button
-                    key={image.src}
+                    key={image.id}
                     type="button"
                     onClick={() => setOpen({ work: workIndex, photo: photoIndex })}
                     className="group relative aspect-[4/3] overflow-hidden bg-ink text-left"
@@ -58,19 +55,16 @@ export function Portfolio() {
                   </button>
                 ))}
               </div>
-              <div className="flex flex-wrap items-end justify-between gap-4 p-5 md:p-6">
-                <div>
-                  <p className="kicker">{item.tag}</p>
-                  <h3 className="mt-1 font-display text-2xl md:text-3xl">{item.title}</h3>
-                  <p className="mt-2 max-w-xl text-muted">{item.text}</p>
-                </div>
-                <a href={site.facebook} target="_blank" rel="noreferrer" className="text-sm font-medium text-oak-deep">
-                  Ver a publicação
-                </a>
-              </div>
-            </article>
-          ))}
-        </div>
+            ) : (
+              <p className="p-5 text-muted">Este trabalho ainda não tem fotografias.</p>
+            )}
+            <div className="p-5 md:p-6">
+              {item.tag ? <p className="kicker">{item.tag}</p> : null}
+              <h2 className="mt-1 font-display text-2xl md:text-3xl">{item.title}</h2>
+              {item.body ? <p className="mt-2 max-w-xl text-muted">{item.body}</p> : null}
+            </div>
+          </article>
+        ))}
       </div>
 
       <dialog
@@ -94,10 +88,10 @@ export function Portfolio() {
             </div>
             <div className="flex items-center justify-between gap-4 p-5">
               <div>
-                <p className="kicker">{work.tag}</p>
+                {work.tag ? <p className="kicker">{work.tag}</p> : null}
                 <h3 className="mt-1 font-display text-2xl">{work.title}</h3>
                 <p className="mt-2 text-sm text-muted">
-                  {open ? open.photo + 1 : 1} / {work.images.length}
+                  {open ? open.photo + 1 : 1} / {work.photos.length}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -112,6 +106,6 @@ export function Portfolio() {
           </div>
         ) : null}
       </dialog>
-    </section>
+    </>
   );
 }

@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { ArrowRight, Check, Star } from "lucide-react";
 import { faqs, jsonLd, promises, services, site, steps, whatsappHref } from "@/lib/site";
+import { listGallery } from "@/lib/gallery.functions";
+import type { GalleryProject } from "@/lib/gallery";
 import { Header } from "@/components/header";
-import { Portfolio } from "@/components/portfolio";
 import { Contact } from "@/components/contact";
 import { FacebookIcon, WhatsAppIcon } from "@/components/icons";
 
@@ -14,7 +16,7 @@ export function HomePage() {
         <Hero />
         <About />
         <Services />
-        <Portfolio />
+        <GalleryTeaser />
         <Testimonials />
         <Faq />
         <Contact />
@@ -276,6 +278,49 @@ function Faq() {
             </details>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function GalleryTeaser() {
+  const [projects, setProjects] = useState<GalleryProject[] | null>(null);
+
+  useEffect(() => {
+    listGallery()
+      .then(setProjects)
+      .catch(() => setProjects([]));
+  }, []);
+
+  const covers = (projects ?? []).flatMap((project) => project.photos.slice(0, 1)).slice(0, 3);
+
+  return (
+    <section className="bg-paper py-20 md:py-28">
+      <div className="mx-auto w-full max-w-6xl px-5 md:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="max-w-2xl">
+            <p className="kicker">Trabalhos</p>
+            <h2 className="mt-3 font-display text-4xl leading-tight text-ink md:text-5xl">
+              Trabalho já feito.
+            </h2>
+            <p className="mt-4 max-w-xl text-muted">
+              A galeria junta as fotografias de cada obra. Entra para ver o conjunto.
+            </p>
+          </div>
+          <a href="/trabalhos" className="tap btn btn-ink">
+            Ver a galeria
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </a>
+        </div>
+        {covers.length > 0 ? (
+          <div className="mt-10 grid gap-3 md:grid-cols-3">
+            {covers.map((photo) => (
+              <a key={photo.id} href="/trabalhos" className="block overflow-hidden rounded-card bg-ink">
+                <img src={photo.src} alt={photo.alt} className="aspect-[4/3] w-full object-cover" />
+              </a>
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );

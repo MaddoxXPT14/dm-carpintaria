@@ -25,12 +25,12 @@ export const site = {
 };
 
 export const nav = [
-  { href: "#sobre", label: "Sobre" },
-  { href: "#servicos", label: "Serviços" },
-  { href: "#trabalhos", label: "Trabalhos" },
-  { href: "#testemunhos", label: "Testemunhos" },
-  { href: "#faq", label: "Perguntas" },
-  { href: "#contactos", label: "Contactos" },
+  { href: "/#sobre", label: "Sobre" },
+  { href: "/#servicos", label: "Serviços" },
+  { href: "/trabalhos", label: "Trabalhos" },
+  { href: "/#testemunhos", label: "Testemunhos" },
+  { href: "/#faq", label: "Perguntas" },
+  { href: "/#contactos", label: "Contactos" },
 ];
 
 export type Service = {
