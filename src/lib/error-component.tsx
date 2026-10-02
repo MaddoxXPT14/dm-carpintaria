@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { TriangleAlert } from "lucide-react";
 
@@ -9,7 +10,23 @@ function errorMessage(error: unknown): string {
   return FALLBACK_MESSAGE;
 }
 
+function isStaleAsset(error: unknown) {
+  const message = errorMessage(error);
+  return /dynamically imported module|module script failed|Failed to fetch/i.test(message);
+}
+
 export function AppErrorComponent({ error }: ErrorComponentProps) {
+  const stale = isStaleAsset(error);
+
+  useEffect(() => {
+    if (!stale) return;
+    const key = "dm-asset-reload-at";
+    const last = Number(sessionStorage.getItem(key) || 0);
+    if (Date.now() - last < 15000) return;
+    sessionStorage.setItem(key, String(Date.now()));
+    window.location.reload();
+  }, [stale]);
+
   return (
     <main
       className={
@@ -22,8 +39,17 @@ export function AppErrorComponent({ error }: ErrorComponentProps) {
       </span>
       <h1 className="text-lg font-semibold">Something went wrong</h1>
       <p className="max-w-md text-sm break-words text-zinc-500 dark:text-zinc-400">
-        {errorMessage(error)}
+        {stale
+          ? "A página ficou com uma versão antiga. A recarregar."
+          : errorMessage(error)}
       </p>
+      <button
+        type="button"
+        className="mt-2 rounded-full bg-zinc-900 px-4 py-2 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900"
+        onClick={() => window.location.reload()}
+      >
+        Recarregar
+      </button>
     </main>
   );
 }
