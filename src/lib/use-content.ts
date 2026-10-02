@@ -14,10 +14,19 @@ export function clearContentCache() {
   pending = null;
 }
 
+export function seedContent(value: SiteContent) {
+  cache = value;
+  pending = Promise.resolve(value);
+}
+
 export function useSiteContent() {
-  const [content, setContent] = useState<SiteContent>({ copy: defaultCopy, projects: [] });
+  const [content, setContent] = useState<SiteContent>(() => cache ?? { copy: defaultCopy, projects: [] });
 
   useEffect(() => {
+    if (cache) {
+      setContent(cache);
+      return;
+    }
     pending ??= getContent()
       .then((value) => {
         cache = value;

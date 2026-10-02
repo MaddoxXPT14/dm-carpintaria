@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { HomePage } from "@/components/home-page";
+import { getContent } from "@/lib/gallery.functions";
+import { seedContent } from "@/lib/use-content";
 import { site } from "@/lib/site";
 
 export const Route = createFileRoute("/")({
+  loader: () => getContent(),
   head: () => ({
     meta: [
       { title: "DM Carpintaria — Distrito de Bragança" },
@@ -11,5 +14,10 @@ export const Route = createFileRoute("/")({
       { name: "author", content: site.name },
     ],
   }),
-  component: HomePage,
+  component: Index,
 });
+
+function Index() {
+  seedContent(Route.useLoaderData());
+  return <HomePage />;
+}
