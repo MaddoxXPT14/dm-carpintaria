@@ -229,7 +229,7 @@ function Editor({
 
   return (
     <main className="bg-paper">
-      <section className={`mx-auto w-full px-5 py-12 ${panel === "trabalhos" ? "max-w-5xl" : "max-w-3xl"}`}>
+      <section className="mx-auto w-full max-w-3xl px-5 py-12">
         <h1 className="font-display text-4xl text-ink">Trabalhos</h1>
         <p className="mt-2 text-sm text-muted">Esta página não aparece no site.</p>
         <div className="mt-6 flex gap-2">

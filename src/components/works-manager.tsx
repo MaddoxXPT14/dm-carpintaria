@@ -73,65 +73,57 @@ export function WorksManager({
   }
 
   return (
-    <div className="mt-8 flex flex-col gap-8 xl:flex-row xl:items-start">
-      <aside className="grid w-full shrink-0 content-start gap-3 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-7rem)] xl:w-80 xl:overflow-y-auto">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-muted">
-            {visible} no site{projects.length - visible > 0 ? ` · ${projects.length - visible} ocultos` : ""}
-          </p>
-          <button type="button" className="tap text-sm font-medium text-oak-deep" onClick={() => setSelected("new")}>
-            Novo
-          </button>
-        </div>
+    <div className="mt-8 grid gap-6">
+      <div className="flex flex-wrap items-center gap-3">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Procurar"
-          className="h-11 rounded-card border border-line bg-cream px-3"
+          className="h-12 min-w-0 flex-1 rounded-card border border-line bg-cream px-3"
         />
-        <div className="grid gap-2">
-          {filtered.map((project) => {
-            const cover = project.photos[0];
-            const index = projects.findIndex((item) => item.id === project.id);
-            return (
-              <div
-                key={project.id}
-                className={`flex gap-2 rounded-card border p-2 ${selected === project.id ? "border-ink bg-foam" : "border-line bg-cream"}`}
-              >
-                <button type="button" className="tap flex min-w-0 flex-1 gap-2 text-left" onClick={() => setSelected(project.id)}>
-                  {cover ? (
-                    <img src={cover.src} alt="" className="size-14 shrink-0 rounded-card object-cover" />
-                  ) : (
-                    <span className="grid size-14 shrink-0 place-items-center rounded-card bg-line text-xs text-muted">Sem foto</span>
-                  )}
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium">{project.title}</span>
-                    <span className="block truncate text-xs text-muted">
-                      {project.hidden ? "Oculto · " : ""}
-                      {project.tag || "Sem divisão"} · {project.photos.length} fotos
-                    </span>
+        <button type="button" className="tap btn btn-ink" onClick={() => setSelected("new")}>
+          Novo trabalho
+        </button>
+      </div>
+      <p className="text-sm text-muted">
+        {visible} no site{projects.length - visible > 0 ? ` · ${projects.length - visible} ocultos` : ""}
+      </p>
+      <div className="grid gap-2">
+        {filtered.map((project) => {
+          const cover = project.photos[0];
+          const index = projects.findIndex((item) => item.id === project.id);
+          return (
+            <div
+              key={project.id}
+              className={`flex items-center gap-3 rounded-card border p-3 ${selected === project.id ? "border-ink bg-foam" : "border-line bg-cream"}`}
+            >
+              <button type="button" className="tap flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelected(project.id)}>
+                {cover ? (
+                  <img src={cover.src} alt="" className="size-16 shrink-0 rounded-card object-cover" />
+                ) : (
+                  <span className="grid size-16 shrink-0 place-items-center rounded-card bg-line text-xs text-muted">Sem foto</span>
+                )}
+                <span className="min-w-0">
+                  <span className="block font-medium">{project.title}</span>
+                  <span className="mt-1 block text-xs text-muted">
+                    {project.hidden ? "Oculto · " : ""}
+                    {project.tag || "Sem divisão"} · {project.photos.length} fotos
                   </span>
-                </button>
-                <span className="grid gap-1">
-                  <button type="button" className="tap text-xs" disabled={busy || index === 0} onClick={() => moveProject(project.id, -1)} aria-label="Subir">
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="tap text-xs"
-                    disabled={busy || index === projects.length - 1}
-                    onClick={() => moveProject(project.id, 1)}
-                    aria-label="Descer"
-                  >
-                    ↓
-                  </button>
                 </span>
+              </button>
+              <div className="flex shrink-0 gap-1">
+                <button type="button" className="tap btn btn-line size-10 px-0" disabled={busy || index === 0} onClick={() => moveProject(project.id, -1)} aria-label="Subir">
+                  ↑
+                </button>
+                <button type="button" className="tap btn btn-line size-10 px-0" disabled={busy || index === projects.length - 1} onClick={() => moveProject(project.id, 1)} aria-label="Descer">
+                  ↓
+                </button>
               </div>
-            );
-          })}
-        </div>
-      </aside>
-      <div className="min-w-0 w-full flex-1">
+            </div>
+          );
+        })}
+      </div>
+      <div className="border-t border-line pt-6">
         {error ? <p className="mb-4 text-sm text-oak-deep">{error}</p> : null}
         {selected === "new" ? (
           <NewWork
