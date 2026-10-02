@@ -30,6 +30,7 @@ export function WorksManager({
     setSelected((current) => {
       const choice = keep === undefined ? current : keep;
       if (choice === "new") return "new";
+      if (choice == null) return null;
       if (typeof choice === "number" && next.some((item) => item.id === choice)) return choice;
       return next[0]?.id ?? null;
     });
@@ -72,58 +73,62 @@ export function WorksManager({
     await run(() => arrangeGallery({ data: { password, ids } }), id);
   }
 
+  const showList = selected == null;
   return (
-    <div className="mt-8 grid gap-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Procurar"
-          className="h-12 min-w-0 flex-1 rounded-card border border-line bg-cream px-3"
-        />
-        <button type="button" className="tap btn btn-ink" onClick={() => setSelected("new")}>
-          Novo trabalho
+    <div className="mt-8 lg:flex lg:items-start lg:gap-8">
+      <aside className={`${showList ? "block" : "hidden"} min-w-0 w-full overflow-x-hidden lg:sticky lg:top-24 lg:block lg:max-h-[calc(100dvh-8rem)] lg:w-96 lg:shrink-0 lg:overflow-y-auto`}>
+        <div className="grid gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted">
+              {visible} no site{projects.length - visible > 0 ? ` · ${projects.length - visible} ocultos` : ""}
+            </p>
+            <button type="button" className="tap btn btn-ink" onClick={() => setSelected("new")}>
+              Novo
+            </button>
+          </div>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Procurar"
+            className="h-11 w-full rounded-card border border-line bg-cream px-3"
+          />
+          <div className="grid gap-2">
+            {filtered.map((project) => {
+              const cover = project.photos[0];
+              const index = projects.findIndex((item) => item.id === project.id);
+              return (
+                <div
+                  key={project.id}
+                  className={`flex min-w-0 items-center gap-2 overflow-hidden rounded-card border p-2 ${selected === project.id ? "border-ink bg-foam" : "border-line bg-cream"}`}
+                >
+                  <button type="button" className="tap flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setSelected(project.id)}>
+                    {cover ? (
+                      <img src={cover.src} alt="" className="size-12 shrink-0 rounded-card object-cover" />
+                    ) : (
+                      <span className="grid size-12 shrink-0 place-items-center rounded-card bg-line text-xs text-muted">—</span>
+                    )}
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium" title={project.title}>{project.title}</span>
+                      <span className="block truncate text-xs text-muted">
+                        {project.hidden ? "Oculto · " : ""}
+                        {project.tag || "Sem divisão"} · {project.photos.length}
+                      </span>
+                    </span>
+                  </button>
+                  <div className="flex shrink-0 flex-col">
+                    <button type="button" className="tap px-1 text-xs" disabled={busy || index === 0} onClick={() => moveProject(project.id, -1)} aria-label="Subir">↑</button>
+                    <button type="button" className="tap px-1 text-xs" disabled={busy || index === projects.length - 1} onClick={() => moveProject(project.id, 1)} aria-label="Descer">↓</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </aside>
+      <div className={`${showList ? "hidden" : "block"} min-w-0 w-full lg:block`}>
+        <button type="button" className="tap mb-4 text-sm font-medium text-oak-deep lg:hidden" onClick={() => setSelected(null)}>
+          Voltar à lista
         </button>
-      </div>
-      <p className="text-sm text-muted">
-        {visible} no site{projects.length - visible > 0 ? ` · ${projects.length - visible} ocultos` : ""}
-      </p>
-      <div className="grid gap-2">
-        {filtered.map((project) => {
-          const cover = project.photos[0];
-          const index = projects.findIndex((item) => item.id === project.id);
-          return (
-            <div
-              key={project.id}
-              className={`flex items-center gap-3 rounded-card border p-3 ${selected === project.id ? "border-ink bg-foam" : "border-line bg-cream"}`}
-            >
-              <button type="button" className="tap flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelected(project.id)}>
-                {cover ? (
-                  <img src={cover.src} alt="" className="size-16 shrink-0 rounded-card object-cover" />
-                ) : (
-                  <span className="grid size-16 shrink-0 place-items-center rounded-card bg-line text-xs text-muted">Sem foto</span>
-                )}
-                <span className="min-w-0">
-                  <span className="block font-medium">{project.title}</span>
-                  <span className="mt-1 block text-xs text-muted">
-                    {project.hidden ? "Oculto · " : ""}
-                    {project.tag || "Sem divisão"} · {project.photos.length} fotos
-                  </span>
-                </span>
-              </button>
-              <div className="flex shrink-0 gap-1">
-                <button type="button" className="tap btn btn-line size-10 px-0" disabled={busy || index === 0} onClick={() => moveProject(project.id, -1)} aria-label="Subir">
-                  ↑
-                </button>
-                <button type="button" className="tap btn btn-line size-10 px-0" disabled={busy || index === projects.length - 1} onClick={() => moveProject(project.id, 1)} aria-label="Descer">
-                  ↓
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="border-t border-line pt-6">
         {error ? <p className="mb-4 text-sm text-oak-deep">{error}</p> : null}
         {selected === "new" ? (
           <NewWork
@@ -159,7 +164,7 @@ export function WorksManager({
             }}
           />
         ) : (
-          <p className="text-muted">Ainda não há trabalhos.</p>
+          <p className="hidden text-muted lg:block">Escolhe um trabalho na lista.</p>
         )}
       </div>
     </div>
