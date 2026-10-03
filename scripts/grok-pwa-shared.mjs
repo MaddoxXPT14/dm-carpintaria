@@ -157,8 +157,12 @@ export function renderInstallPageHtml(template, { host, url } = {}) {
     .replaceAll("{{APP_URL}}", escapeHtml(stripInstallParams(url)));
 }
 
-export function renderWebManifest(hostHeader) {
-  const name = appNameFromHost(hostHeader);
+export function renderWebManifest(hostHeader, nameOverride = "") {
+  const fromHost = appNameFromHost(hostHeader);
+  const override = String(nameOverride ?? "").trim();
+  const named = fromHost !== DEFAULT_APP_NAME;
+  const name = named ? fromHost : override || fromHost;
+  const icon = named || !override ? "/__grok/icon-180.png" : "/favicon.png";
   return JSON.stringify(
     {
       name,
@@ -171,7 +175,7 @@ export function renderWebManifest(hostHeader) {
       theme_color: "#000000",
       icons: [
         {
-          src: "/__grok/icon-180.png",
+          src: icon,
           sizes: "180x180",
           type: "image/png",
         },
