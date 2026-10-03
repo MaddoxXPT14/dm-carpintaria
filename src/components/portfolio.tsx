@@ -27,6 +27,7 @@ function groupProjects(projects: GalleryProject[]) {
 
 export function Portfolio({ projects }: { projects: GalleryProject[] }) {
   const [open, setOpen] = useState<{ work: number; photo: number } | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export function Portfolio({ projects }: { projects: GalleryProject[] }) {
   }
 
   const groups = groupProjects(projects);
+  const shown = category ? groups.filter((group) => group.key === category) : groups;
 
   if (projects.length === 0) {
     return (
@@ -60,15 +62,30 @@ export function Portfolio({ projects }: { projects: GalleryProject[] }) {
   return (
     <>
       <div className="mt-8 flex flex-wrap gap-2">
+        <button
+          type="button"
+          aria-pressed={category === null}
+          className={`tap rounded-full border px-3 py-2 text-sm ${category === null ? "border-ink bg-ink text-cream" : "border-line bg-foam"}`}
+          onClick={() => setCategory(null)}
+        >
+          Todas
+          <span className={`ml-2 ${category === null ? "text-cream/70" : "text-muted"}`}>{projects.length}</span>
+        </button>
         {groups.map((group) => (
-          <a key={group.key} href={`#categoria-${group.key}`} className="tap rounded-full border border-line bg-foam px-3 py-2 text-sm">
+          <button
+            key={group.key}
+            type="button"
+            aria-pressed={category === group.key}
+            className={`tap rounded-full border px-3 py-2 text-sm ${category === group.key ? "border-ink bg-ink text-cream" : "border-line bg-foam"}`}
+            onClick={() => setCategory(group.key)}
+          >
             {group.label}
-            <span className="ml-2 text-muted">{group.items.length}</span>
-          </a>
+            <span className={`ml-2 ${category === group.key ? "text-cream/70" : "text-muted"}`}>{group.items.length}</span>
+          </button>
         ))}
       </div>
       <div className="mt-12 flex flex-col gap-16">
-        {groups.map((group) => (
+        {shown.map((group) => (
           <section key={group.key} id={`categoria-${group.key}`} className="scroll-mt-24">
             <h2 className="font-display text-3xl md:text-4xl">{group.label}</h2>
             <div className="mt-8 flex flex-col gap-14">
