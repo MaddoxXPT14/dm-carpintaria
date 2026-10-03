@@ -19,6 +19,21 @@ const backupKey = "dm-carpintaria-conteudo";
 
 type Backup = { savedAt: number; copy: SiteCopy; projects: GalleryProject[] };
 
+function groupByCategory(projects: GalleryProject[]) {
+  const order: string[] = [];
+  const groups = new Map<string, GalleryProject[]>();
+  for (const project of projects) {
+    const label = project.tag.trim() || "Sem categoria";
+    const current = groups.get(label);
+    if (current) current.push(project);
+    else {
+      groups.set(label, [project]);
+      order.push(label);
+    }
+  }
+  return order.map((label) => ({ label, items: groups.get(label) ?? [] }));
+}
+
 function categoriesOf(value: unknown): Category[] {
   if (!value || typeof value !== "object" || !("categories" in value)) return [];
   const categories = (value as { categories?: unknown }).categories;
@@ -166,6 +181,7 @@ export function WorksManager({
   const [categories, setCategories] = useState<Category[]>([]);
   const [selected, setSelected] = useState<number | "new" | null>(null);
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"lista" | "categorias">("lista");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -224,28 +240,34 @@ export function WorksManager({
   }
 
   async function moveProject(id: number, direction: number) {
-    const index = list.findIndex((project) => project.id === id);
-    const nextIndex = index + direction;
-    if (index < 0 || nextIndex < 0 || nextIndex >= list.length) return;
-    const ids = list.map((project) => project.id);
-    const [item] = ids.splice(index, 1);
-    ids.splice(nextIndex, 0, item);
+    const project = list.find((item) => item.id === id);
+    if (!project) return;
+    const same = list.filter((item) => item.tag === project.tag);
+    const index = same.findIndex((item) => item.id === id);
+    const neighbor = same[index + direction];
+    if (!neighbor) return;
+    const ids = list.map((item) => item.id);
+    const from = ids.indexOf(id);
+    const to = ids.indexOf(neighbor.id);
+    ids[from] = neighbor.id;
+    ids[to] = id;
     await run(() => arrangeGallery({ data: { password, ids } }), id);
   }
 
   const showList = selected == null;
+  const groups = groupByCategory(filtered);
   return (
-    <div className="mt-8 lg:flex lg:items-start lg:gap-8">
-      <aside className={`${showList ? "block" : "hidden"} min-w-0 w-full overflow-x-hidden lg:sticky lg:top-24 lg:block lg:max-h-[calc(100dvh-8rem)] lg:w-96 lg:shrink-0 lg:overflow-y-auto`}>
-        <div className="grid gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-muted">
-              {visible} no site{list.length - visible > 0 ? ` · ${list.length - visible} ocultos` : ""}
-            </p>
-            <button type="button" className="tap btn btn-ink" onClick={() => setSelected("new")}>
-              Novo
-            </button>
-          </div>
+    <div className="mt-8">
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={`tap btn ${view === "lista" ? "btn-ink" : "btn-line"}`} onClick={() => setView("lista")}>
+          Trabalhos
+        </button>
+        <button type="button" className={`tap btn ${view === "categorias" ? "btn-ink" : "btn-line"}`} onClick={() => setView("categorias")}>
+          Categorias
+        </button>
+      </div>
+      {view === "categorias" ? (
+        <div className="mt-6 max-w-xl">
           <CategoryBar
             categories={categories}
             busy={busy}
@@ -255,16 +277,35 @@ export function WorksManager({
               run(() => deleteGalleryCategory({ data: { password, id } }));
             }}
           />
+          <p className="mt-3 text-sm text-muted">Estas categorias aparecem no menu de cada trabalho e na galeria do site.</p>
+        </div>
+      ) : (
+    <div className="mt-6 lg:flex lg:items-start lg:gap-8">
+      <aside className={`${showList ? "block" : "hidden"} min-w-0 w-full overflow-x-hidden lg:sticky lg:top-24 lg:block lg:max-h-[calc(100dvh-8rem)] lg:w-96 lg:shrink-0 lg:overflow-y-auto`}>
+        <div className="grid gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted">
+              {visible} no site{list.length - visible > 0 ? ` · ${list.length - visible} ocultos` : ""}
+            </p>
+            <button type="button" className="tap btn btn-ink" onClick={() => setSelected("new")}>
+              Novo trabalho
+            </button>
+          </div>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Procurar"
             className="h-11 w-full rounded-card border border-line bg-cream px-3"
           />
-          <div className="grid gap-2">
-            {filtered.map((project) => {
+          <div className="grid gap-5">
+            {groups.map((group) => (
+              <div key={group.label}>
+                <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted">{group.label}</p>
+                <div className="grid gap-2">
+            {group.items.map((project) => {
               const cover = project.photos[0];
-              const index = list.findIndex((item) => item.id === project.id);
+              const same = list.filter((item) => item.tag === project.tag);
+              const index = same.findIndex((item) => item.id === project.id);
               return (
                 <div
                   key={project.id}
@@ -280,17 +321,20 @@ export function WorksManager({
                       <span className="block truncate font-medium" title={project.title}>{project.title}</span>
                       <span className="block truncate text-xs text-muted">
                         {project.hidden ? "Oculto · " : ""}
-                        {project.tag || "Sem categoria"} · {project.photos.length}
+                        {project.photos.length} {project.photos.length === 1 ? "foto" : "fotos"}
                       </span>
                     </span>
                   </button>
                   <div className="flex shrink-0 flex-col">
                     <button type="button" className="tap px-1 text-xs" disabled={busy || index === 0} onClick={() => moveProject(project.id, -1)} aria-label="Subir">↑</button>
-                    <button type="button" className="tap px-1 text-xs" disabled={busy || index === list.length - 1} onClick={() => moveProject(project.id, 1)} aria-label="Descer">↓</button>
+                    <button type="button" className="tap px-1 text-xs" disabled={busy || index === same.length - 1} onClick={() => moveProject(project.id, 1)} aria-label="Descer">↓</button>
                   </div>
                 </div>
               );
             })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </aside>
@@ -338,6 +382,8 @@ export function WorksManager({
           <p className="hidden text-muted lg:block">Escolhe um trabalho na lista.</p>
         )}
       </div>
+    </div>
+      )}
     </div>
   );
 }
@@ -488,7 +534,7 @@ function WorkEditor({
         </button>
       </div>
       <form
-        className="grid gap-3"
+        className="grid gap-3 rounded-card border border-line bg-foam p-4"
         onSubmit={(event) => {
           event.preventDefault();
           onSave({
@@ -499,14 +545,26 @@ function WorkEditor({
           });
         }}
       >
-        <input value={title} onChange={(event) => setTitle(event.target.value)} required minLength={2} className="h-12 rounded-card border border-line bg-cream px-3" />
-        <CategorySelect categories={categories} value={tag} onChange={setTag} />
-        <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={4} className="rounded-card border border-line bg-cream px-3 py-2" />
+        <h3 className="font-display text-2xl">Texto</h3>
+        <label className="grid gap-1 text-sm">
+          Nome
+          <input value={title} onChange={(event) => setTitle(event.target.value)} required minLength={2} className="h-12 rounded-card border border-line bg-cream px-3" />
+        </label>
+        <label className="grid gap-1 text-sm">
+          Categoria
+          <CategorySelect categories={categories} value={tag} onChange={setTag} />
+        </label>
+        <label className="grid gap-1 text-sm">
+          Texto
+          <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={4} className="rounded-card border border-line bg-cream px-3 py-2" />
+        </label>
         <button type="submit" className="tap btn btn-ink w-fit" disabled={busy}>
           {busy ? "A guardar…" : "Guardar texto e legendas"}
         </button>
       </form>
-      <p className="text-sm text-muted">A posição 1 é a capa. Escreve o número da posição ou usa Capa.</p>
+      <section className="grid gap-3">
+        <h3 className="font-display text-2xl">Fotografias</h3>
+        <p className="text-sm text-muted">A posição 1 é a capa. Escreve o número da posição ou usa Capa.</p>
       <div className="grid gap-3">
         {photos.map((photo, index) => (
           <article
@@ -569,8 +627,10 @@ function WorkEditor({
           Juntar fotos
         </button>
       </form>
+      </section>
       {cover ? (
         <div className="overflow-hidden rounded-card border border-line">
+          <p className="px-4 pt-4 text-sm font-medium">Como fica no site</p>
           <img src={cover.src} alt="" className="aspect-[16/7] w-full object-cover" />
           <div className="p-4">
             {tag ? <p className="kicker">{tag}</p> : null}
