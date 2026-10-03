@@ -1,8 +1,10 @@
 import { useEffect, useState, type DragEvent, type FormEvent } from "react";
 import {
+  addGalleryCategory,
   addGalleryProject,
   addProjectPhotos,
   arrangeGallery,
+  deleteGalleryCategory,
   deleteGalleryPhoto,
   deleteGalleryProject,
   listManagedGallery,
@@ -16,6 +18,112 @@ import type { GalleryProject } from "@/lib/gallery";
 const backupKey = "dm-carpintaria-conteudo";
 
 type Backup = { savedAt: number; copy: SiteCopy; projects: GalleryProject[] };
+
+function categoriesOf(value: unknown): Category[] {
+  if (!value || typeof value !== "object" || !("categories" in value)) return [];
+  const categories = (value as { categories?: unknown }).categories;
+  if (!Array.isArray(categories)) return [];
+  return categories.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const id = Number((item as { id?: unknown }).id);
+    const name = String((item as { name?: unknown }).name ?? "").trim();
+    if (!Number.isInteger(id) || id <= 0 || !name) return [];
+    return [{ id, name }];
+  });
+}
+
+function CategoryBar({
+  categories,
+  busy,
+  onAdd,
+  onRemove,
+}: {
+  categories: Category[];
+  busy: boolean;
+  onAdd: (name: string) => void;
+  onRemove: (id: number, name: string) => void;
+}) {
+  const [name, setName] = useState("");
+  return (
+    <div className="grid gap-2 rounded-card border border-line bg-foam p-3">
+      <p className="text-sm font-medium">Categorias</p>
+      <div className="flex flex-wrap gap-2">
+        {categories.length === 0 ? <p className="text-sm text-muted">Ainda não há categorias.</p> : null}
+        {categories.map((category) => (
+          <span key={category.id} className="inline-flex items-center gap-1 rounded-full border border-line bg-cream py-1 pr-1 pl-3 text-sm">
+            {category.name}
+            <button
+              type="button"
+              className="tap px-1 text-muted"
+              disabled={busy}
+              aria-label={`Remover ${category.name}`}
+              onClick={() => onRemove(category.id, category.name)}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+      <form
+        className="flex gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const next = name.trim();
+          if (next.length < 2) return;
+          onAdd(next);
+          setName("");
+        }}
+      >
+        <input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Nova categoria"
+          maxLength={40}
+          className="h-11 min-w-0 flex-1 rounded-card border border-line bg-cream px-3"
+        />
+        <button type="submit" className="tap btn btn-line" disabled={busy || name.trim().length < 2}>
+          Criar
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function CategorySelect({
+  categories,
+  value,
+  onChange,
+}: {
+  categories: Category[];
+  value: string;
+  onChange?: (value: string) => void;
+}) {
+  const known = categories.some((category) => category.name.toLocaleLowerCase("pt") === value.toLocaleLowerCase("pt"));
+  const options = (
+    <>
+      <option value="">Sem categoria</option>
+      {value && !known ? <option value={value}>{value}</option> : null}
+      {categories.map((category) => (
+        <option key={category.id} value={category.name}>
+          {category.name}
+        </option>
+      ))}
+    </>
+  );
+  const className = "h-12 rounded-card border border-line bg-cream px-3";
+  if (onChange) {
+    return (
+      <select name="tag" value={value} onChange={(event) => onChange(event.target.value)} className={className}>
+        {options}
+      </select>
+    );
+  }
+  return (
+    <select name="tag" defaultValue={value} className={className}>
+      {options}
+    </select>
+  );
+}
 
 function projectsOf(value: unknown): GalleryProject[] {
   if (Array.isArray(value)) return value as GalleryProject[];
@@ -45,6 +153,8 @@ function writeBackup(snapshot: Backup) {
   }
 }
 
+type Category = { id: number; name: string };
+
 export function WorksManager({
   password,
   onSaved,
@@ -53,6 +163,7 @@ export function WorksManager({
   onSaved: (published: boolean) => void;
 }) {
   const [projects, setProjects] = useState<GalleryProject[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selected, setSelected] = useState<number | "new" | null>(null);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
@@ -63,15 +174,18 @@ export function WorksManager({
     let savedAt = raw && typeof raw === "object" && "savedAt" in raw ? Number(raw.savedAt) || 0 : 0;
     let copy = raw && typeof raw === "object" && "copy" in raw ? raw.copy : undefined;
     let next = projectsOf(raw);
+    let source: unknown = raw;
     const backup = readBackup();
     if (backup && copy && backup.savedAt > savedAt && backup.projects.length > 0) {
       const restored = await restoreManagedContent({ data: { password, ...backup } });
       savedAt = Number(restored.savedAt) || savedAt;
       copy = restored.copy;
       next = projectsOf(restored);
+      source = restored;
     }
     if (copy) writeBackup({ savedAt, copy, projects: next });
     setProjects(next);
+    setCategories(categoriesOf(source));
     setSelected((current) => {
       const choice = keep === undefined ? current : keep;
       if (choice === "new") return "new";
@@ -132,6 +246,15 @@ export function WorksManager({
               Novo
             </button>
           </div>
+          <CategoryBar
+            categories={categories}
+            busy={busy}
+            onAdd={(name) => run(() => addGalleryCategory({ data: { password, name } }))}
+            onRemove={(id, name) => {
+              if (!confirm(`Remover a categoria «${name}»? Os trabalhos dessa categoria ficam sem categoria.`)) return;
+              run(() => deleteGalleryCategory({ data: { password, id } }));
+            }}
+          />
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -179,6 +302,7 @@ export function WorksManager({
         {selected === "new" ? (
           <NewWork
             busy={busy}
+            categories={categories}
             onCancel={() => setSelected(projects[0]?.id ?? null)}
             onCreate={async (input) => {
               setBusy(true);
@@ -198,6 +322,7 @@ export function WorksManager({
           <WorkEditor
             key={current.id}
             project={current}
+            categories={categories}
             busy={busy}
             onSave={(input) => run(() => updateGalleryProject({ data: { password, id: current.id, ...input } }), current.id)}
             onPhotos={(images) => run(() => addProjectPhotos({ data: { password, id: current.id, images } }), current.id)}
@@ -219,10 +344,12 @@ export function WorksManager({
 
 function NewWork({
   busy,
+  categories,
   onCancel,
   onCreate,
 }: {
   busy: boolean;
+  categories: Category[];
   onCancel: () => void;
   onCreate: (input: { title: string; tag: string; body: string; images: { alt: string; data: string }[] }) => void;
 }) {
@@ -251,7 +378,7 @@ function NewWork({
     <form onSubmit={submit} className="grid gap-4 rounded-card border border-line bg-foam p-5">
       <h2 className="font-display text-2xl">Novo trabalho</h2>
       <input name="title" required minLength={2} placeholder="Nome" className="h-12 rounded-card border border-line bg-cream px-3" />
-      <input name="tag" placeholder="Categoria: sala, cozinha, quarto…" className="h-12 rounded-card border border-line bg-cream px-3" />
+      <CategorySelect categories={categories} value="" />
       <textarea name="body" rows={4} placeholder="Texto que aparece por baixo das fotos" className="rounded-card border border-line bg-cream px-3 py-2" />
       <input name="photos" type="file" accept="image/*" multiple required className="text-sm" />
       <div className="flex flex-wrap gap-2">
@@ -268,6 +395,7 @@ function NewWork({
 
 function WorkEditor({
   project,
+  categories,
   busy,
   onSave,
   onPhotos,
@@ -277,6 +405,7 @@ function WorkEditor({
   onDelete,
 }: {
   project: GalleryProject;
+  categories: Category[];
   busy: boolean;
   onSave: (input: { title: string; tag: string; body: string; captions: { id: number; alt: string }[] }) => void;
   onPhotos: (images: { alt: string; data: string }[]) => void;
@@ -371,7 +500,7 @@ function WorkEditor({
         }}
       >
         <input value={title} onChange={(event) => setTitle(event.target.value)} required minLength={2} className="h-12 rounded-card border border-line bg-cream px-3" />
-        <input value={tag} onChange={(event) => setTag(event.target.value)} placeholder="Categoria" className="h-12 rounded-card border border-line bg-cream px-3" />
+        <CategorySelect categories={categories} value={tag} onChange={setTag} />
         <textarea value={body} onChange={(event) => setBody(event.target.value)} rows={4} className="rounded-card border border-line bg-cream px-3 py-2" />
         <button type="submit" className="tap btn btn-ink w-fit" disabled={busy}>
           {busy ? "A guardar…" : "Guardar texto e legendas"}

@@ -169,6 +169,22 @@ async function ensureReady(sql: Sql) {
     values (1, true)
     on conflict (id) do update set seeded = true
   `;
+  const categories = await sql<{ n: number }>`select count(*)::int as n from gallery_categories`;
+  if ((categories[0]?.n ?? 0) === 0) {
+    const tags = await sql<{ tag: string }>`
+      select distinct btrim(tag) as tag
+      from gallery_projects
+      where btrim(tag) <> ''
+      order by 1
+    `;
+    for (let index = 0; index < tags.length; index += 1) {
+      await sql`
+        insert into gallery_categories (name, position)
+        values (${tags[index]?.tag ?? ""}, ${index})
+        on conflict do nothing
+      `;
+    }
+  }
 }
 
 async function touch(sql: Sql) {
@@ -248,7 +264,12 @@ async function snapshot(sql: Sql, includeHidden: boolean) {
     savedAt: await savedAt(sql),
     copy: await readCopy(sql),
     projects: await readProjects(sql, includeHidden),
+    categories: await readCategories(sql),
   };
+}
+
+async function readCategories(sql: Sql) {
+  return sql<{ id: number; name: string }>`select id, name from gallery_categories order by position, id`;
 }
 
 async function requirePassword(password: string) {
@@ -487,6 +508,33 @@ export const deleteGalleryPhoto = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const sql = await requirePassword(data.password);
     await sql`delete from gallery_photos where id = ${data.id}`;
+    await touch(sql);
+    return { ok: true, published: true };
+  });
+
+export const addGalleryCategory = createServerFn({ method: "POST" })
+  .validator(z.object({ password: z.string().min(1), name: z.string().trim().min(2).max(40) }))
+  .handler(async ({ data }) => {
+    const sql = await requirePassword(data.password);
+    const existing = await sql<{ id: number }>`select id from gallery_categories where lower(name) = lower(${data.name})`;
+    if (existing.length > 0) throw new Error("Essa categoria já existe.");
+    const last = await sql<{ position: number }>`select coalesce(max(position), -1)::int as position from gallery_categories`;
+    await sql`
+      insert into gallery_categories (name, position)
+      values (${data.name}, ${(last[0]?.position ?? -1) + 1})
+    `;
+    return { ok: true };
+  });
+
+export const deleteGalleryCategory = createServerFn({ method: "POST" })
+  .validator(z.object({ password: z.string().min(1), id: z.number().int().positive() }))
+  .handler(async ({ data }) => {
+    const sql = await requirePassword(data.password);
+    const rows = await sql<{ name: string }>`select name from gallery_categories where id = ${data.id}`;
+    const name = rows[0]?.name;
+    if (!name) throw new Error("Essa categoria já não existe.");
+    await sql`update gallery_projects set tag = '' where lower(btrim(tag)) = lower(${name})`;
+    await sql`delete from gallery_categories where id = ${data.id}`;
     await touch(sql);
     return { ok: true, published: true };
   });
